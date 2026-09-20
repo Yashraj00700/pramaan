@@ -10,7 +10,7 @@ import {
 } from './_validate';
 
 // Give Claude room to reason (deep analysis + optional web search). Matches vercel.json.
-export const config = { maxDuration: 120 };
+export const config = { maxDuration: 300 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "selftest": "node scripts/selftest.mjs",
+    "samples": "node scripts/make-samples.mjs && node scripts/retamper.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.127.0",

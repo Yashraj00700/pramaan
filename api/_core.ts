@@ -25,6 +25,7 @@ import sharp from 'sharp';
 import jsQR from 'jsqr';
 import { runDeterministicChecks } from './verification';
 import { screenNames } from './sanctions';
+import { runCourt } from './court';
 
 const MODEL = 'claude-opus-5';
 
@@ -109,8 +110,80 @@ const REPORT_SCHEMA = {
         required: ['label', 'severity', 'box'],
       },
     },
+    modules: {
+      type: 'array',
+      description:
+        'The DEEP FORENSIC DOSSIER. One entry per analysis module listed in the system prompt, in that order. Each needs a substantial multi-paragraph analyst narrative, concrete checks, and findings. Never output an empty narrative — if a module does not apply to this document type, say so explicitly and explain why, and set status INFO.',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: 'The module id from the system prompt list.' },
+          title: { type: 'string' },
+          status: { type: 'string', enum: ['PASS', 'WARN', 'FAIL', 'INFO'] },
+          score: { type: 'number', description: '0-100 health score for this module (higher = healthier).' },
+          narrative: { type: 'string', description: '2-4 paragraphs of specific analyst reasoning citing what you actually saw.' },
+          checks: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                category: { type: 'string' },
+                status: { type: 'string', enum: ['PASS', 'FAIL', 'WARN'] },
+                detail: { type: 'string' },
+              },
+              required: ['category', 'status', 'detail'],
+            },
+          },
+          findings: { type: 'array', items: { type: 'string' } },
+        },
+        required: ['id', 'title', 'status', 'narrative', 'checks', 'findings'],
+      },
+    },
+    riskBreakdown: {
+      type: 'array',
+      description: 'Risk contribution per dimension (0-100, higher = riskier). Use the module areas as labels.',
+      items: {
+        type: 'object',
+        properties: { label: { type: 'string' }, score: { type: 'number' } },
+        required: ['label', 'score'],
+      },
+    },
+    timeline: {
+      type: 'array',
+      description: 'Every date found on the document, in order, with who/what it relates to and whether it is internally consistent.',
+      items: {
+        type: 'object',
+        properties: {
+          date: { type: 'string' },
+          event: { type: 'string' },
+          entity: { type: 'string' },
+          consistency: { type: 'string', enum: ['Consistent', 'Inconsistent', 'Unknown'] },
+        },
+        required: ['date', 'event', 'entity', 'consistency'],
+      },
+    },
+    fraudTypology: {
+      type: 'object',
+      description: 'If fraud is indicated, name the specific scheme (e.g. "Forged income certificate for scheme eligibility", "Altered marksheet", "Fake bank guarantee", "Doctored invoice / ITC fraud").',
+      properties: {
+        name: { type: 'string' },
+        probability: { type: 'number' },
+        rationale: { type: 'string' },
+        nextSteps: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['name', 'probability', 'rationale', 'nextSteps'],
+    },
+    issuerIntel: {
+      type: 'string',
+      description: 'What the document claims about its issuer/authority, and how plausible that is based ONLY on the document + any web_search you performed. Say plainly what cannot be confirmed here.',
+    },
+    missingDocuments: {
+      type: 'array',
+      description: 'Supporting documents a reviewer should demand to settle any remaining doubt.',
+      items: { type: 'string' },
+    },
   },
-  required: ['documentType', 'verdict', 'riskScore', 'confidence', 'summary', 'redFlags', 'consistencyChecks', 'extractedFields', 'technicalSignals', 'recommendedAction', 'externalChecksNeeded', 'visualMarkers'],
+  required: ['documentType', 'verdict', 'riskScore', 'confidence', 'summary', 'redFlags', 'consistencyChecks', 'extractedFields', 'technicalSignals', 'recommendedAction', 'externalChecksNeeded', 'visualMarkers', 'modules', 'riskBreakdown', 'timeline'],
 } as const;
 
 const SYSTEM = `You are Pramaan, a world-class and scrupulously HONEST document-forensics examiner. You judge whether a document (government certificates, marksheets, IDs, bank statements, invoices, tender papers, contracts, etc.) is authentic or fraudulent, and you explain your reasoning with specific evidence.
@@ -129,6 +202,22 @@ A) TECHNICAL/VISUAL FORENSICS: font/kerning/weight inconsistencies (esp. names, 
 B) TEXT & OCR: read all fields; assess grammar/spelling/transliteration/formatting plausibility for the claimed issuer/region.
 C) CROSS-FIELD & ARITHMETIC LOGIC (populate consistencyChecks richly): line items vs total/tax; stated age vs DOB vs issue date; declared income vs shown balances/salary; ID/number format vs issuer/country/state; date ordering; issuer vs jurisdiction vs content.
 D) DOC-TYPE PLAYBOOKS: apply the specific document type's common forgeries (Indian caste/income/domicile certificate serials & issuing-authority conventions; marksheet grade/total arithmetic; bank-statement running-balance continuity; invoice HS codes/GST math/Incoterms; tender turnover/experience/bank-guarantee docs).
+
+===== THE DOSSIER: produce ALL 12 MODULES, in this exact order =====
+You are writing a professional forensic dossier a government officer could act on and defend. For EVERY module below emit an entry in "modules" with a substantial 2-4 paragraph narrative (specific to THIS document — quote what you actually saw), concrete checks, and findings. Never leave a narrative thin or generic. If a module genuinely does not apply to this document type, set status INFO and explain why in the narrative.
+1.  id "executive"    — Executive Summary: what the document is, who it concerns, the verdict and the two or three findings that drove it.
+2.  id "forensics"    — Document Forensics: ELA interpretation, compression/noise/resolution consistency, clone or splice artifacts, metadata (EXIF/PDF producer, creation-vs-modification), scan vs digital origin.
+3.  id "typography"   — Typography & Layout: fonts, weights, kerning, baseline alignment, spacing, margins, template/logo fidelity; text that was re-typed or pasted over.
+4.  id "content"      — Content & Cross-Field Logic: every arithmetic and logical relationship you can test between fields.
+5.  id "identity"     — Identity & Number Validation: every ID/reference number, its expected format for the stated issuer, and whether it is structurally plausible. (Checksum math is computed separately in code and will be merged in — do not invent checksum results.)
+6.  id "security"     — Security Features: stamps, seals, signatures, watermarks, holograms, microtext, QR/barcode presence and whether a document of this type should carry one.
+7.  id "issuer"       — Issuer & Entity Intelligence: the issuing authority/company/bank named, its plausibility, and what must be confirmed at source.
+8.  id "financial"    — Financial Integrity: amounts, totals, tax math, running balances, salary/income plausibility, bank/account detail formats, round-number and digit-pattern anomalies.
+9.  id "compliance"   — Compliance & Legal: mandatory fields/clauses for this document type and jurisdiction, validity period, authority to issue.
+10. id "screening"    — Screening & Reputation: what you could and could NOT check about the named parties. (Watchlist screening is run separately in code and merged in — never invent a screening result.)
+11. id "predictive"   — Fraud Typology & Prediction: the specific fraud scheme this matches if fraudulent, its probability, and what the fraudster's next step usually is.
+12. id "verdict"      — Verdict & Actions: the decision, the reasoning chain, and exactly what the reviewer should do next.
+Also populate: riskBreakdown (risk 0-100 per module area), timeline (every date on the document with consistency), fraudTypology, issuerIntel, and missingDocuments.
 
 ===== OUTPUT =====
 - Many, specific extractedFields and consistencyChecks; concrete redFlags each with real evidence; technicalSignals with concern flags.
@@ -253,6 +342,26 @@ function safeDate(fn: () => Date | undefined): Date | null { try { return fn() |
 function clamp(n: unknown, dflt: number): number { const v = typeof n === 'number' && isFinite(n) ? n : dflt; return Math.max(0, Math.min(100, Math.round(v))); }
 function arr(v: any): any[] { return Array.isArray(v) ? v : []; }
 
+/**
+ * Merge code-computed results into a dossier module. Deterministic results are
+ * authoritative: they are prepended to the module's checks, the note is prepended
+ * to its narrative, and a FAIL forces the module status to FAIL. If the model did
+ * not emit the module at all, it is created.
+ */
+function mergeIntoModule(report: any, id: string, title: string, checks: any[], note: string) {
+  if (!Array.isArray(report.modules)) report.modules = [];
+  let mod = report.modules.find((m: any) => m && m.id === id);
+  if (!mod) {
+    mod = { id, title, status: 'INFO', narrative: '', checks: [], findings: [] };
+    report.modules.push(mod);
+  }
+  mod.checks = [...checks, ...arr(mod.checks)];
+  mod.narrative = note + (mod.narrative ? '\n\n' + mod.narrative : '');
+  if (checks.some((c) => c?.status === 'FAIL')) mod.status = 'FAIL';
+  else if (mod.status === 'INFO' && checks.length) mod.status = checks.some((c) => c?.status === 'WARN') ? 'WARN' : 'PASS';
+  return mod;
+}
+
 function contentBlock(mediaType: string, data: string) {
   if (mediaType === 'application/pdf') return { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } };
   const imageType = mediaType && mediaType.startsWith('image/') ? mediaType : 'image/png';
@@ -317,6 +426,18 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
   report.recommendedAction = String(report.recommendedAction || '');
   report.externalChecksNeeded = arr(report.externalChecksNeeded);
   report.visualMarkers = arr(report.visualMarkers);
+  // Surface the ELA heatmap to the UI (display-only; the client strips it before
+  // writing history so it cannot blow the localStorage quota).
+  const elaImg = extraImages.find((i) => i.caption.includes('ERROR-LEVEL'));
+  if (elaImg) report.elaImage = `data:${elaImg.media_type};base64,${elaImg.data}`;
+
+  report.modules = arr(report.modules);
+  report.riskBreakdown = arr(report.riskBreakdown);
+  report.timeline = arr(report.timeline);
+  report.missingDocuments = arr(report.missingDocuments);
+  report.issuerIntel = String(report.issuerIntel || '');
+
+  let hardFailures = 0;
 
   // ---- DETERMINISTIC VERIFICATION LAYER -------------------------------------
   // Math beats opinion: identifier checksums and watchlist screening are computed
@@ -324,10 +445,20 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
   // GSTIN/IBAN checksum is proof the number is fabricated, not a matter of degree.
   try {
     const det = runDeterministicChecks(report.extractedFields);
-    if (det?.checks?.length) report.consistencyChecks = [...det.checks, ...report.consistencyChecks];
+    if (det?.checks?.length) {
+      report.consistencyChecks = [...det.checks, ...report.consistencyChecks];
+      mergeIntoModule(
+        report,
+        'identity',
+        'Identity & Number Validation',
+        det.checks.map((c: any) => ({ category: c.check, status: c.status, detail: c.detail })),
+        'The results below are COMPUTED IN CODE, not inferred by the model. Each identifier was validated against its official structure and checksum rule (Aadhaar via the Verhoeff algorithm, PAN structure and entity-type code, GSTIN via its mod-36 check character, IFSC format, IBAN via mod-97). A FAIL here is mathematical proof that the number could not have been issued by the real authority, and it overrides any softer assessment elsewhere in this dossier.',
+      );
+    }
     if (det?.signals?.length) report.technicalSignals = [...report.technicalSignals, ...det.signals];
 
     const hard = det?.hardFailures || 0;
+    hardFailures = hard;
     if (hard > 0) {
       report.riskScore = Math.min(100, Math.max(report.riskScore, 65 + 10 * hard));
       if (hard >= 2) report.verdict = 'LIKELY_FAKE';
@@ -362,12 +493,78 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
       .map((f) => String(f.value).trim());
     const unique = Array.from(new Set(names)).slice(0, 5);
     if (unique.length) {
-      const res = await screenNames(unique, { timeoutMs: 6000 });
-      if (res?.checks?.length) report.consistencyChecks = [...report.consistencyChecks, ...res.checks];
+      // The OFAC export is ~5MB; give it room before honestly reporting "unavailable".
+      const res = await screenNames(unique, { timeoutMs: 12000 });
+      if (res?.checks?.length) {
+        report.consistencyChecks = [...report.consistencyChecks, ...res.checks];
+        mergeIntoModule(
+          report,
+          'screening',
+          'Screening & Reputation',
+          res.checks.map((c: any) => ({ category: c.check, status: c.status, detail: c.detail })),
+          `OFAC watchlist screening was executed in code against ${unique.length} name(s) found on the document. ${
+            res.available
+              ? 'The list was fetched and screened successfully; results below are computed, not inferred.'
+              : 'The list could NOT be retrieved, so no screening conclusion may be drawn — this is reported honestly rather than shown as a clean result.'
+          } A name match is never by itself an identification and always requires human confirmation.`,
+        );
+      }
       if (res?.signals?.length) report.technicalSignals = [...report.technicalSignals, ...res.signals];
     }
   } catch (e) {
     console.error('sanctions screening failed:', e);
+  }
+
+  // ---- ADVERSARIAL COURT ----------------------------------------------------
+  // Prosecution and Defense argue the same evidence concurrently, then a Judge
+  // rules. The code-computed facts are handed over as BINDING evidence, so a
+  // failed checksum cannot be argued away and an unavailable watchlist cannot be
+  // spun into a clean result. The ruling's "dismissed" list is what protects
+  // against false positives.
+  try {
+    const bindingFacts = [
+      'BINDING, CODE-COMPUTED FACTS (calculated in code, not inferred — conclusive, and NOT open to reinterpretation by either side):',
+      ...report.technicalSignals.map((s: any) => `- ${s.label}: ${s.value}${s.concern ? '  [CONCERN]' : ''}`),
+      ...report.consistencyChecks.map((c: any) => `- [${c.status}] ${c.check}: ${c.detail}`),
+      hardFailures > 0
+        ? `- ${hardFailures} identifier(s) FAILED official checksum validation. This is mathematical proof the number could not have been issued by the real authority.`
+        : '- No identifier failed checksum validation.',
+    ].join('\n');
+
+    const court = await runCourt({
+      client,
+      model: MODEL,
+      userContent,
+      baseReport: report,
+      bindingFacts,
+      effort: 'medium',
+    });
+
+    if (court && court.ruling) {
+      report.court = court;
+      const r: any = court.ruling;
+      if (['AUTHENTIC', 'SUSPICIOUS', 'LIKELY_FAKE'].includes(r.verdict)) report.verdict = r.verdict;
+      report.riskScore = clamp(r.riskScore, report.riskScore);
+      report.confidence = clamp(r.confidence, report.confidence);
+      if (r.reasoning) {
+        mergeIntoModule(
+          report,
+          'verdict',
+          'Verdict & Actions',
+          [],
+          'ADJUDICATED VERDICT — this outcome was reached by an adversarial review: a prosecution case and a defence case were argued from identical evidence, then weighed by an independent adjudicator against the binding code-computed facts.\n\n' +
+            String(r.reasoning),
+        );
+      }
+      // Deterministic override is re-asserted LAST so no argument can undo maths.
+      if (hardFailures > 0) {
+        report.riskScore = Math.min(100, Math.max(report.riskScore, 65 + 10 * hardFailures));
+        if (hardFailures >= 2) report.verdict = 'LIKELY_FAKE';
+        else if (report.verdict === 'AUTHENTIC') report.verdict = 'SUSPICIOUS';
+      }
+    }
+  } catch (e) {
+    console.error('adversarial court failed (non-fatal):', e);
   }
 
   return report;
