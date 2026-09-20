@@ -3,7 +3,7 @@ import { ShieldCheck, ScanLine, FileWarning } from 'lucide-react';
 
 /**
  * Simple, honest "About" page — no invented statistics, no fake testimonials,
- * no fake customer logos. Describes what Pramaan does and how it works.
+ * no fake customer logos. Describes what DocsGuard does and how it works.
  */
 const About: React.FC = () => {
   return (
@@ -12,10 +12,10 @@ const About: React.FC = () => {
         About
       </p>
       <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-[#0F172A] mb-4">
-        What Pramaan does
+        What DocsGuard does
       </h1>
       <p className="text-sm sm:text-base text-[#475569] leading-relaxed mb-8">
-        Pramaan is a document authenticity and fraud-detection tool. Upload a certificate, ID,
+        DocsGuard is a document authenticity and fraud-detection tool. Upload a certificate, ID,
         invoice, or statement, and it checks the file for tampering signals, internal
         inconsistencies, and known forgery patterns — then explains what it found in plain
         language, with the evidence behind each finding.

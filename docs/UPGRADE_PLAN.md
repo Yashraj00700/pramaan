@@ -1,4 +1,4 @@
-# Pramaan — Upgrade Plan (v2)
+# DocsGuard — Upgrade Plan (v2)
 
 ## What went wrong in v1 (diagnosed, not guessed)
 

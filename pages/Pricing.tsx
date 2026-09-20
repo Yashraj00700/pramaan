@@ -4,7 +4,7 @@ import { Check } from 'lucide-react';
 
 /**
  * Simple, honest "Pricing" page — no invented tiers, prices, or fake
- * discounts. Pramaan does not currently charge for scans; this page says so
+ * discounts. DocsGuard does not currently charge for scans; this page says so
  * plainly instead of fabricating a pricing table.
  */
 const Pricing: React.FC = () => {
@@ -17,7 +17,7 @@ const Pricing: React.FC = () => {
         Free to use, for now
       </h1>
       <p className="text-sm sm:text-base text-[#475569] leading-relaxed mb-8">
-        Pramaan does not currently charge for document scans. There is no paid tier, trial period,
+        DocsGuard does not currently charge for document scans. There is no paid tier, trial period,
         or usage limit being enforced today. If that changes, this page will say so plainly — we
         won't publish invented pricing tiers or discounts in the meantime.
       </p>
@@ -44,7 +44,7 @@ const Pricing: React.FC = () => {
         <Link to="/about" className="text-[#2563EB] font-medium hover:underline">
           the About page
         </Link>{' '}
-        for what Pramaan does, or head to{' '}
+        for what DocsGuard does, or head to{' '}
         <Link to="/workspace" className="text-[#2563EB] font-medium hover:underline">
           the workspace
         </Link>{' '}

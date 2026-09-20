@@ -143,7 +143,7 @@ const AssistantPanel: React.FC<AssistantPanelProps> = ({ report }) => {
             exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.85 }}
             transition={panelTransition}
             className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-14 h-14 rounded-full bg-[#2563EB] hover:bg-[#1E40AF] text-white shadow-[0_10px_24px_-8px_rgba(37,99,235,0.5)] flex items-center justify-center cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
-            aria-label="Open Pramaan Assistant — ask questions about this report"
+            aria-label="Open DocsGuard Assistant — ask questions about this report"
             aria-expanded={open}
           >
             <MessageCircle className="w-6 h-6" aria-hidden="true" />
@@ -157,7 +157,7 @@ const AssistantPanel: React.FC<AssistantPanelProps> = ({ report }) => {
             key="assistant-panel"
             role="dialog"
             aria-modal="false"
-            aria-label="Pramaan Assistant"
+            aria-label="DocsGuard Assistant"
             initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 16, scale: prefersReducedMotion ? 1 : 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: prefersReducedMotion ? 0 : 16, scale: prefersReducedMotion ? 1 : 0.97 }}
@@ -170,7 +170,7 @@ const AssistantPanel: React.FC<AssistantPanelProps> = ({ report }) => {
                 <Sparkles className="w-4.5 h-4.5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-display font-bold text-sm text-[#0F172A] leading-tight">Pramaan Assistant</p>
+                <p className="font-display font-bold text-sm text-[#0F172A] leading-tight">DocsGuard Assistant</p>
                 <p className="text-xs text-[#94A3B8] truncate">Grounded in this {report.documentType || 'document'} report</p>
               </div>
               <button
@@ -264,7 +264,7 @@ const AssistantPanel: React.FC<AssistantPanelProps> = ({ report }) => {
                   onKeyDown={handleInputKeyDown}
                   disabled={loading}
                   placeholder="Ask about this report…"
-                  aria-label="Ask the Pramaan Assistant a question about this report"
+                  aria-label="Ask the DocsGuard Assistant a question about this report"
                   className="flex-1 min-w-0 rounded-xl border border-[#E2E8F0] bg-white px-3.5 py-2.5 text-sm text-[#0F172A] placeholder:text-[#94A3B8] disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-0 transition-colors duration-200"
                 />
                 <button

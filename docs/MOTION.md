@@ -1,4 +1,4 @@
-# Pramaan — Motion & Micro-interaction Spec
+# DocsGuard — Motion & Micro-interaction Spec
 
 Companion to `DESIGN_REFERENCE.md` (visual ground truth) and `DESIGN_SYSTEM.md` (tokens/components).
 Everything here is **CDN-safe**: pure CSS `@keyframes` + `IntersectionObserver`. No Framer Motion,
@@ -130,7 +130,7 @@ when the media query matches — this avoids a "flash then freeze" artifact from
 
 Progressive-enhancement note: if you're worried about content being invisible when JS fails to load,
 default `.reveal` to `opacity: 1` and only apply the `opacity: 0` starting state via a `.js-ready`
-class added to `<html>` once your bundle mounts. For an internal dashboard app (Pramaan is not a
+class added to `<html>` once your bundle mounts. For an internal dashboard app (DocsGuard is not a
 crawled marketing-only site) this is optional — pick it up if SEO/no-JS matters for the landing page.
 
 ### 3.2 `useReveal` hook (TSX, copy-paste)

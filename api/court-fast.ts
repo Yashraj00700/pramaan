@@ -5,7 +5,12 @@
  * judge). That is intellectually tidy but far too slow for an interactive scan.
  * This version asks for all three in ONE structured response: the model must
  * argue both sides and then rule. Same output shape, roughly a third of the
- * latency.
+ * latency of the sequential version.
+ *
+ * _core.ts now also runs this CONCURRENTLY (Promise.allSettled) alongside the
+ * two dossier-module calls, all three fed the Pass-A result plus the same
+ * document/ELA/metadata content — so this call's cost is fully overlapped
+ * with theirs rather than tacked on afterward.
  */
 import type { CourtProceedings } from '../types';
 
@@ -64,7 +69,10 @@ const SCHEMA = {
   required: ['prosecution', 'defense', 'ruling'],
 };
 
-function condense(r: any): string {
+/** Condenses a report (Pass-A core, or the fuller merged report) into compact
+ *  text for a downstream model call. Exported so _core.ts's module-group calls
+ *  can reuse the exact same condensation the court uses. */
+export function condense(r: any): string {
   const s = (a: any[], f: (x: any) => string, n = 6) => (Array.isArray(a) ? a.slice(0, n).map(f).join('\n') : '');
   return [
     `Document: ${r?.documentType}`,
@@ -87,7 +95,7 @@ export async function runCourt(opts: {
     const { client, model, userContent, baseReport, bindingFacts } = opts;
     const res = await client.messages.create({
       model,
-      max_tokens: 6000,
+      max_tokens: 5000,
       thinking: { type: 'adaptive' },
       output_config: { effort: opts.effort || 'low' },
       system: SYSTEM,

@@ -1,4 +1,4 @@
-# Pramaan — External Verification Data Sources
+# DocsGuard — External Verification Data Sources
 
 **Status today: none of these are wired up.** The live build (`api/_core.ts`) only computes deterministic signals it can verify itself (SHA-256, PDF producer/creation-vs-modification dates via `pdf-lib`) and sends those + the document to Claude. Claude is explicitly instructed never to fabricate the result of an external lookup — anything that needs one is listed in `externalChecksNeeded` on the `AnalysisReport`. This document is the research behind turning specific `externalChecksNeeded` items into real PASS/FAIL calls, prioritized by what is actually reachable in a hackathon vs. what needs a real partnership.
 
@@ -46,7 +46,7 @@ Sources: [DigiLocker Authorized Partner API Spec v2.2](https://cf-media.api-setu
 - Because the signature is verifiable against UIDAI's **published public key**, verification can be done **entirely offline — no API call to UIDAI is required at all.** You parse the QR/XML, check the digital signature against UIDAI's certificate, and you have cryptographic proof the data wasn't altered after UIDAI issued it.
 - UIDAI ships an official free **Aadhaar QR Scanner** app (Android/iOS/Windows) as a reference implementation. Building your own verifier means reimplementing that signature check (well-documented; libraries exist), not calling a metered API.
 
-**Cost / rate limits:** Free — there is no per-verification charge because there is no live call. UIDAI does separately offer online eKYC/paperless authentication requiring registration as an AUA/KUA (Authentication User Agency) — that path *is* paid/partnered and is a different, much heavier product (used for live OTP-based Aadhaar auth, not what Pramaan needs).
+**Cost / rate limits:** Free — there is no per-verification charge because there is no live call. UIDAI does separately offer online eKYC/paperless authentication requiring registration as an AUA/KUA (Authentication User Agency) — that path *is* paid/partnered and is a different, much heavier product (used for live OTP-based Aadhaar auth, not what DocsGuard needs).
 
 **Integration difficulty:** Low-Medium. Parsing the QR/XML format and validating an X.509 signature is a solved, documented problem — realistic to prototype in a hackathon if a document sample with a real Aadhaar QR is available; the code is the same regardless of whose Aadhaar it is.
 

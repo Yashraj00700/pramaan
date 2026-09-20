@@ -33,3 +33,4 @@ dist-ssr
 .worktrees/
 .security-key
 logs/security/
+video/

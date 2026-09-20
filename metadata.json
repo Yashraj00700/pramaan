@@ -1,5 +1,5 @@
 {
-  "name": "Pramaan",
+  "name": "DocsGuard",
   "description": "AI document-authenticity & fraud detection. Upload any document and know in seconds if it's real — verdict, risk score, highlighted evidence and cross-field checks, powered by Claude.",
   "requestFramePermissions": [],
   "majorCapabilities": []

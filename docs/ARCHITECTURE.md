@@ -1,4 +1,4 @@
-# Pramaan — Technical Architecture
+# DocsGuard — Technical Architecture
 
 > **Code-update note (2026-09-20):** this doc was written against an earlier `api/_core.ts`.
 > Now live in the engine: **`exifr` image EXIF/editor-tag extraction**, a **`web_search`
@@ -8,13 +8,13 @@
 > exifr/web-search are "not wired" or the durations "disagree", `api/_core.ts` / `api/analyze.ts`
 > are the source of truth.
 
-This document describes how Pramaan is actually built today — not an aspirational roadmap. Where something is a declared dependency or a planned swap-in rather than live code, it is called out explicitly.
+This document describes how DocsGuard is actually built today — not an aspirational roadmap. Where something is a declared dependency or a planned swap-in rather than live code, it is called out explicitly.
 
 ---
 
 ## 1. Component & data-flow overview
 
-Pramaan is a single-page React app plus one serverless function. There is no standing backend, no database, and no server-side document storage.
+DocsGuard is a single-page React app plus one serverless function. There is no standing backend, no database, and no server-side document storage.
 
 | Layer | Tech | File(s) |
 |---|---|---|
@@ -48,7 +48,7 @@ sequenceDiagram
     C->>C: Normalize: clamp scores 0-100,<br/>coerce arrays, prepend deterministic<br/>signals to technicalSignals
     C-->>V: AnalysisReport
     V-->>B: 200 { report: AnalysisReport }
-    B->>B: HistoryService.save(record)<br/>→ localStorage "pramaan_scans"
+    B->>B: HistoryService.save(record)<br/>→ localStorage "docsguard_scans"
     B->>B: Render ResultView (verdict, red flags,<br/>consistency checks, visual markers)
 ```
 
@@ -149,7 +149,7 @@ interface AnalysisReport {
 ## 3. Security model
 
 - **API key never reaches the browser.** `ANTHROPIC_API_KEY` is read only in `api/_core.ts` (`process.env.ANTHROPIC_API_KEY`, or `.env.local` via Vite's `loadEnv` in the dev-only middleware). No client bundle, network response, or source map contains it. `analysisService.ts` calls a same-origin relative path (`/api/analyze`) — the key is never a query param or client-visible header.
-- **No document persistence server-side.** `api/_core.ts` holds the uploaded file only in memory (`Buffer.from(fileBase64, 'base64')`) for the duration of the request; nothing is written to disk or to a database on the server. History (`ScanRecord[]`, including a data-URL thumbnail for images) lives entirely in the browser's `localStorage` under `pramaan_scans`, capped at 30 records (`services/historyService.ts`) — it is per-browser, not shared, and not visible to Pramaan's operators.
+- **No document persistence server-side.** `api/_core.ts` holds the uploaded file only in memory (`Buffer.from(fileBase64, 'base64')`) for the duration of the request; nothing is written to disk or to a database on the server. History (`ScanRecord[]`, including a data-URL thumbnail for images) lives entirely in the browser's `localStorage` under `docsguard_scans` (migrated automatically from the legacy `pramaan_scans` key on first read), capped at 30 records (`services/historyService.ts`) — it is per-browser, not shared, and not visible to DocsGuard's operators.
 - **Request-body limits:** Vercel serverless functions using the Node runtime accept up to ~4.5 MB request bodies by default (the platform's own `functions.api.body` limit — see `vercel.json`/Vercel docs for the current cap); there is no explicit override in this project, so uploads are implicitly bounded by that platform default. There is no client-side file-size check today — a large upload fails at the platform boundary rather than with an app-level error message, which is a reasonable hardening item.
 - **Input validation is minimal by design for a hackathon build:** `api/analyze.ts` checks method (`POST` only) and the presence of `fileBase64`; it does not validate `mediaType` against an allowlist or cap `fileBase64` length before decoding. Malformed or oversized payloads currently surface as a 500 with the caught error message rather than a clean 400 — worth tightening before handling untrusted public traffic at scale.
 - **Prompt-injection posture:** the system prompt explicitly forbids Claude from asserting the result of any external lookup (registries, WHOIS, sanctions, DigiLocker/e-District, bank confirmation) — those go into `externalChecksNeeded` instead of being fabricated. This is a prompt-level control, not a code-enforced one; there is no server-side filter that strips or checks for such claims in the model's output today.
@@ -196,7 +196,7 @@ Observed cost/latency levers, all currently hard-coded in `api/_core.ts`:
 
 ## 6. History storage: localStorage today, Supabase-ready
 
-`services/historyService.ts` implements `HistoryService.{getAll, save, remove, clear}` entirely against `localStorage` (key `pramaan_scans`, capped at 30 most-recent records, every operation wrapped in try/catch so quota/private-mode failures degrade to no-ops rather than throwing). This is genuinely local and per-browser — it is not shared across devices or visible to anyone but that browser's user, and it is lost if the user clears site data.
+`services/historyService.ts` implements `HistoryService.{getAll, save, remove, clear}` entirely against `localStorage` (key `docsguard_scans`, with a one-time migration from the legacy `pramaan_scans` key if present, capped at 30 most-recent records, every operation wrapped in try/catch so quota/private-mode failures degrade to no-ops rather than throwing). This is genuinely local and per-browser — it is not shared across devices or visible to anyone but that browser's user, and it is lost if the user clears site data.
 
 The file documents (but does not implement) the swap to a shared backend: gate on `import.meta.env.VITE_SUPABASE_URL` being set, dynamically `import("@supabase/supabase-js")`, and reimplement the same four methods against a `scans` table (`select ... order by created_at desc limit 30`, `upsert`, `delete`, `delete-all`), keeping `HistoryService`'s call signature unchanged so `App.tsx` and every other caller need no changes. `@supabase/supabase-js` is **not** currently a `package.json` dependency and no `supabase/schema.sql` migration file exists in the repo — this is a designed extension point, not a partially-built feature.
 

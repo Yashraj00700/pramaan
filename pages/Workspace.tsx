@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import type { AnalysisReport, ScanRecord } from '../types';
-import { analyzeDocument, fileToDataUrl, loadDemoReport } from '../services/analysisService';
+import { analyzeDocument, fileToDataUrl } from '../services/analysisService';
 import { HistoryService } from '../services/historyService';
 import FileUpload from '../components/FileUpload';
 import { SoftGlow, DocScan } from '../components/motifs/Motifs';
@@ -107,15 +107,33 @@ const SidebarPanel: React.FC<{
   </div>
 );
 
-const DEMO_META: Record<'genuine' | 'tampered', { fileName: string; thumbnail: string }> = {
-  genuine: { fileName: 'SAMPLE — genuine-income-certificate.jpg', thumbnail: '/samples/genuine-income-certificate.jpg' },
-  tampered: { fileName: 'SAMPLE — tampered-income-certificate.jpg', thumbnail: '/samples/tampered-income-certificate.jpg' },
+// Bundled fictional specimen documents (public/samples/) used by the "Try it on a
+// test document" control below. These are run through the exact same real
+// analyzeDocument() pipeline as an uploaded file — nothing about the result is
+// pre-baked. The path/fileName describe the specimen; they do not predict the verdict.
+const SPECIMEN_META: Record<'genuine' | 'tampered', { path: string; fileName: string }> = {
+  genuine: { path: '/samples/genuine-income-certificate.jpg', fileName: 'genuine-income-certificate.jpg' },
+  tampered: { path: '/samples/tampered-income-certificate.jpg', fileName: 'tampered-income-certificate.jpg' },
 };
 
 /**
- * The scan workspace: uploader + recent-scans sidebar + demo-sample loading.
- * On a successful scan or demo load it navigates to /scan/:id so the result
- * is deep-linkable and the browser Back button returns here.
+ * Fetches a bundled specimen image from its public path and turns it into a File,
+ * so it can be pushed through the same analyzeDocument() path as a user upload.
+ */
+async function fetchSpecimenFile(kind: 'genuine' | 'tampered'): Promise<File> {
+  const meta = SPECIMEN_META[kind];
+  const response = await fetch(meta.path);
+  if (!response.ok) {
+    throw new Error(`Could not load the specimen document (${meta.path}). Please try again.`);
+  }
+  const blob = await response.blob();
+  return new File([blob], meta.fileName, { type: blob.type || 'image/jpeg' });
+}
+
+/**
+ * The scan workspace: uploader + recent-scans sidebar + a "try it on a test
+ * document" shortcut. On a successful scan it navigates to /scan/:id so the
+ * result is deep-linkable and the browser Back button returns here.
  */
 const Workspace: React.FC = () => {
   const navigate = useNavigate();
@@ -155,7 +173,7 @@ const Workspace: React.FC = () => {
       const looksUnconfigured = UNCONFIGURED_SERVER_MESSAGES.some((m) => rawMessage.includes(m));
       setError(
         looksUnconfigured
-          ? "The live analysis engine isn't reachable right now — this usually means the server's analysis key isn't configured yet. While that's being sorted out, try one of the sample reports below to see a full Pramaan forensic dossier."
+          ? "The live analysis engine isn't reachable right now — this usually means the server's analysis key isn't configured yet. While that's being sorted out, try one of the sample reports below to see a full DocsGuard forensic dossier."
           : rawMessage
       );
     } finally {
@@ -163,24 +181,38 @@ const Workspace: React.FC = () => {
     }
   };
 
-  /** Loads one of the two built-in, fully-populated FICTIONAL sample reports — no API key required. */
-  const handleLoadDemo = async (kind: 'genuine' | 'tampered') => {
+  /**
+   * Runs a REAL analysis on one of the two bundled fictional specimen documents.
+   * Fetches the image from its public path, converts it to a File, and pushes it
+   * through the exact same analyzeDocument() pipeline an uploaded file takes —
+   * there is no pre-built/fixture report involved.
+   */
+  const handleRunSpecimen = async (kind: 'genuine' | 'tampered') => {
     setError(null);
     setIsAnalyzing(true);
     try {
-      const report: AnalysisReport = await loadDemoReport(kind);
-      const meta = DEMO_META[kind];
+      const file = await fetchSpecimenFile(kind);
+      const report: AnalysisReport = await analyzeDocument(file);
+      const thumbnail = await fileToDataUrl(file);
       const rec: ScanRecord = {
-        id: 'DEMO-' + kind.toUpperCase() + '-' + Date.now(),
+        id: 'PR-' + Date.now(),
         createdAt: Date.now(),
-        fileName: meta.fileName,
-        mediaType: 'image/jpeg',
-        thumbnail: meta.thumbnail,
+        fileName: file.name,
+        mediaType: file.type || 'image/jpeg',
+        thumbnail,
         report,
       };
       HistoryService.save(rec);
       refreshHistory();
       navigate(`/scan/${rec.id}`);
+    } catch (e) {
+      const rawMessage = e instanceof Error ? e.message : 'Something went wrong while analyzing this document. Please try again.';
+      const looksUnconfigured = UNCONFIGURED_SERVER_MESSAGES.some((m) => rawMessage.includes(m));
+      setError(
+        looksUnconfigured
+          ? "The live analysis engine isn't reachable right now — this usually means the server's analysis key isn't configured yet. Please try again once that's sorted out."
+          : rawMessage
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -274,7 +306,7 @@ const Workspace: React.FC = () => {
                   Verify a document
                 </h1>
                 <p className="text-sm text-[#475569] mt-1.5">
-                  Upload a certificate, ID, invoice or statement — Pramaan cross-checks it for
+                  Upload a certificate, ID, invoice or statement — DocsGuard cross-checks it for
                   tampering, inconsistencies and forgery signals.
                 </p>
               </div>
@@ -297,15 +329,17 @@ const Workspace: React.FC = () => {
               <span>Your document is analyzed securely and never stored on our servers.</span>
             </div>
 
-            {/* Sample reports — no upload or API key required, useful for a quick demo. */}
+            {/* Try it on a bundled test document — runs the SAME real analyzeDocument() pipeline
+                as an upload. No fixture/pre-built report is involved; the verdict shown is
+                whatever the live analysis actually returns for that fictional specimen file. */}
             <div className="relative mt-8 pt-7 border-t border-[#E2E8F0]">
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-4 h-4 text-[#2563EB]" aria-hidden="true" />
-                <h2 className="font-display text-sm font-bold text-[#0F172A]">See a sample report</h2>
+                <h2 className="font-display text-sm font-bold text-[#0F172A]">Try it on a test document</h2>
               </div>
               <p className="text-xs text-[#475569] mb-4 max-w-xl">
-                No file handy? Load a full, fictional Pramaan dossier instantly — one clean certificate, one
-                forged one — to see every section of the report.
+                No file handy? Pick a fictional specimen certificate below — it gets uploaded and run through
+                the real DocsGuard analysis pipeline, the same as a document you upload yourself.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <motion.button
@@ -314,15 +348,15 @@ const Workspace: React.FC = () => {
                   whileHover={isAnalyzing ? undefined : { y: -2 }}
                   whileTap={isAnalyzing ? undefined : { y: 0 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  onClick={() => handleLoadDemo('genuine')}
+                  onClick={() => handleRunSpecimen('genuine')}
                   className="flex items-center gap-3 text-left rounded-xl border border-[#E2E8F0] bg-white hover:border-[#10B981]/50 hover:bg-[#ECFDF5]/40 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-3.5 cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
                 >
                   <span className="inline-flex w-9 h-9 shrink-0 items-center justify-center rounded-lg bg-[#ECFDF5] text-[#10B981]">
                     <ShieldCheck className="w-4.5 h-4.5" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-[#0F172A]">Genuine certificate</span>
-                    <span className="block text-xs text-[#475569] mt-0.5">Clean pass — AUTHENTIC verdict</span>
+                    <span className="block text-sm font-semibold text-[#0F172A]">A clean certificate</span>
+                    <span className="block text-xs text-[#475569] mt-0.5">Fictional, unaltered specimen — really analyzed</span>
                   </span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-[#94A3B8] ml-auto shrink-0" aria-hidden="true" />
                 </motion.button>
@@ -332,15 +366,15 @@ const Workspace: React.FC = () => {
                   whileHover={isAnalyzing ? undefined : { y: -2 }}
                   whileTap={isAnalyzing ? undefined : { y: 0 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  onClick={() => handleLoadDemo('tampered')}
+                  onClick={() => handleRunSpecimen('tampered')}
                   className="flex items-center gap-3 text-left rounded-xl border border-[#E2E8F0] bg-white hover:border-[#EF4444]/50 hover:bg-[#FEF2F2]/40 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-3.5 cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
                 >
                   <span className="inline-flex w-9 h-9 shrink-0 items-center justify-center rounded-lg bg-[#FEF2F2] text-[#EF4444]">
                     <ShieldAlert className="w-4.5 h-4.5" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-[#0F172A]">Tampered certificate</span>
-                    <span className="block text-xs text-[#475569] mt-0.5">Forged income figure — LIKELY_FAKE verdict</span>
+                    <span className="block text-sm font-semibold text-[#0F172A]">A tampered certificate</span>
+                    <span className="block text-xs text-[#475569] mt-0.5">Fictional, digitally altered specimen — really analyzed</span>
                   </span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-[#94A3B8] ml-auto shrink-0" aria-hidden="true" />
                 </motion.button>

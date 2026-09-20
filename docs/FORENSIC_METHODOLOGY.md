@@ -1,4 +1,4 @@
-# Pramaan — Forensic Detection Methodology
+# DocsGuard — Forensic Detection Methodology
 
 > **Code-update note (2026-09-20):** parts of this doc were written against an earlier
 > `api/_core.ts`. The engine has since been upgraded and the following are now **live**:
@@ -11,7 +11,7 @@
 > model must cite web-search findings rather than fabricate. Treat `api/_core.ts` as the source
 > of truth where any statement below says exifr/web-search are "unused/not wired".
 
-This document describes, precisely, how Pramaan decides whether a document is
+This document describes, precisely, how DocsGuard decides whether a document is
 `AUTHENTIC`, `SUSPICIOUS`, or `LIKELY_FAKE`. It is written against the actual
 implementation in `api/_core.ts` (shared by `api/analyze.ts` on Vercel and the
 `vite.config.ts` dev middleware), not against an idealized design. Where the
@@ -59,7 +59,7 @@ without re-deriving.
 
 | Signal | How it's computed | What it implies |
 |---|---|---|
-| **SHA-256 hash** | `createHash('sha256').update(buf).digest('hex')` over the raw uploaded bytes | A stable fingerprint of the exact file received. Useful as an audit/chain-of-custody reference (e.g. "this is the same file the applicant uploaded last week") and for exact-duplicate detection if compared against a prior hash. It does **not** by itself indicate tampering — a hash only tells you the file matches (or doesn't match) another specific file; Pramaan does not currently maintain a hash registry to compare against. |
+| **SHA-256 hash** | `createHash('sha256').update(buf).digest('hex')` over the raw uploaded bytes | A stable fingerprint of the exact file received. Useful as an audit/chain-of-custody reference (e.g. "this is the same file the applicant uploaded last week") and for exact-duplicate detection if compared against a prior hash. It does **not** by itself indicate tampering — a hash only tells you the file matches (or doesn't match) another specific file; DocsGuard does not currently maintain a hash registry to compare against. |
 | **File size** | `buf.length / 1024` KB | Sanity signal only. An implausibly small file for its stated page count/resolution, or a size wildly inconsistent with what a genuine issuer's scanner/PDF export typically produces, is a weak secondary signal Claude can factor in — not dispositive on its own. |
 | **PDF page count** | `pdf.getPageCount()` via `pdf-lib` | Flags obvious mismatches (e.g. a "3-page bank statement" that is actually 1 page). |
 | **PDF producer** | `pdf.getProducer()` | The software that generated the PDF stream (e.g. `Adobe PDF Library`, `Microsoft: Print To PDF`, `iLovePDF`, `Skia/PDF` from a phone scanning app, `Canva`). A producer string inconsistent with how the purported issuer generates documents (e.g. a "government e-District portal" PDF whose producer is a generic image-editing or "PDF to Word to PDF" toolchain) is a real, checkable signal. |
@@ -243,13 +243,13 @@ explicit "still needs checking" list, distinct from the red flags Claude is
 actually asserting.
 
 **Limits this implies, stated plainly:**
-- Pramaan's verdict is bounded entirely by what is visible on the document
+- DocsGuard's verdict is bounded entirely by what is visible on the document
   itself plus the deterministic file-level metadata. It cannot and does not
   confirm that a certificate number, bank account, GST/PAN, or company
   registration actually exists or is currently valid.
 - A well-forged document that is internally consistent (correct format,
   plausible numbers, no visible pixel tampering, clean PDF metadata) can pass
-  as `AUTHENTIC` — Pramaan is a triage/screening aid that raises the bar for
+  as `AUTHENTIC` — DocsGuard is a triage/screening aid that raises the bar for
   fraud, not a guarantee of authenticity.
 - Adding a real `web_search` tool (Anthropic's API supports server-side web
   search as a tool) would let Claude *look up* public information (e.g.
@@ -357,7 +357,7 @@ Stated directly, without hedging:
 6. **`confidence` is self-reported, not statistically calibrated** (Section
    5) — there is no benchmark dataset this system has been measured against
    for precision/recall or false-positive rate.
-7. **No legal or evidentiary status.** Pramaan is explicitly a
+7. **No legal or evidentiary status.** DocsGuard is explicitly a
    triage/screening aid (stated in `docs/PRODUCT.md`), not a court-admissible
    forensic report, and does not claim chain-of-custody guarantees beyond the
    SHA-256 hash of the uploaded bytes.
@@ -377,7 +377,7 @@ Stated directly, without hedging:
 
 ### Practical guidance for a deployer
 
-Use Pramaan's verdict to **prioritize and accelerate** human review, not to
+Use DocsGuard's verdict to **prioritize and accelerate** human review, not to
 replace it for high-stakes decisions:
 - `AUTHENTIC` with high confidence and no `externalChecksNeeded` items →
   fast-track, but retain spot-check sampling.

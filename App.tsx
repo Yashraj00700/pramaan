@@ -46,11 +46,11 @@ const AppLayout: React.FC = () => {
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2.5 group shrink-0 min-w-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2 rounded-lg"
-            aria-label="Pramaan home"
+            aria-label="DocsGuard home"
           >
             <ShieldMark className="w-8 h-8 shrink-0" />
             <span className="font-display font-extrabold tracking-tight text-lg text-[#0F172A] truncate hidden sm:inline">
-              Pramaan
+              DocsGuard
             </span>
           </button>
 
@@ -82,7 +82,7 @@ const AppLayout: React.FC = () => {
 
       <footer className="border-t border-[#E2E8F0] bg-white py-6">
         <p className="text-center text-xs text-[#475569] px-4">
-          Pramaan • Powered by Claude • Documents are analyzed securely and not stored on our servers.
+          DocsGuard • Powered by Claude • Documents are analyzed securely and not stored on our servers.
         </p>
       </footer>
     </div>

@@ -1,7 +1,20 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Camera, ArrowUpRight, Fingerprint, ScanLine, Gavel, ShieldCheck } from 'lucide-react';
+import {
+  FileText,
+  Camera,
+  ArrowUpRight,
+  Fingerprint,
+  ScanLine,
+  Gavel,
+  ShieldCheck,
+  ShieldAlert,
+  GitCompare,
+  Hash,
+  QrCode,
+  Clock,
+} from 'lucide-react';
 import { CornerTicks, DocScan } from './motifs/Motifs';
 
 interface Props {
@@ -17,22 +30,50 @@ const SCAN_STEPS = [
   { label: 'Preparing verdict…', icon: Gavel },
 ];
 
+// What the engine actually looks at — shown as chips on the idle drop zone.
+const ENGINE_CHECKS = [
+  { label: 'Tampering', icon: ShieldAlert },
+  { label: 'Metadata', icon: Fingerprint },
+  { label: 'Cross-field logic', icon: GitCompare },
+  { label: 'Checksums', icon: Hash },
+  { label: 'QR', icon: QrCode },
+];
+
+// Stage thresholds in ms — presentational pacing only. The real analysis
+// promise in App.tsx is what actually gates isAnalyzing; these never claim
+// a stage is "done" beyond what elapsed time makes reasonable to show.
+const STAGE_TIMINGS = [1200, 3000, 5200, 7200];
+const REASSURANCE_AFTER_SEC = 25;
+
 const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
   const [dragActive, setDragActive] = useState(false);
   const [scanStep, setScanStep] = useState(0);
+  const [elapsedSec, setElapsedSec] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Advance through the stepper while a scan is running. Presentational only —
-  // the real analysis promise in App.tsx is what actually gates isAnalyzing.
+  // driven purely by elapsed time, never by an actual "stage complete" signal
+  // we don't have.
   useEffect(() => {
     if (isAnalyzing) {
       setScanStep(0);
-      const timers = [1200, 3000, 5200, 7200].map((time, index) =>
+      const timers = STAGE_TIMINGS.map((time, index) =>
         setTimeout(() => setScanStep(index + 1), time)
       );
       return () => timers.forEach(clearTimeout);
     }
+  }, [isAnalyzing]);
+
+  // Elapsed-seconds counter, also presentational — a live clock, not an ETA.
+  useEffect(() => {
+    if (!isAnalyzing) {
+      setElapsedSec(0);
+      return;
+    }
+    setElapsedSec(0);
+    const interval = setInterval(() => setElapsedSec((s) => s + 1), 1000);
+    return () => clearInterval(interval);
   }, [isAnalyzing]);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -72,6 +113,12 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
     }
   };
 
+  // Smooth, continuously-rising fill for the progress rail. Asymptotic and
+  // capped well short of 100% — it visualizes "work is happening," it never
+  // asserts a stage or the whole scan has actually finished.
+  const railPct = Math.min(96, Math.round(100 * (1 - Math.exp(-elapsedSec / 6))));
+  const clampedStep = Math.min(scanStep, SCAN_STEPS.length - 1);
+
   return (
     <div className="w-full max-w-3xl mx-auto">
       <AnimatePresence mode="wait" initial={false}>
@@ -82,70 +129,148 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            className="relative h-[420px] rounded-3xl border border-[#E2E8F0] bg-white shadow-[0_10px_30px_-12px_rgba(15,23,42,0.12)] overflow-hidden flex flex-col items-center justify-center"
+            className="relative min-h-[480px] rounded-3xl border border-[#E2E8F0] bg-white shadow-[0_10px_30px_-12px_rgba(15,23,42,0.12)] overflow-hidden flex flex-col items-center justify-center py-10"
           >
             <CornerTicks className="text-[#2563EB]/25" />
 
-            {/* Cobalt scan-line sweeping top-to-bottom */}
+            {/* Subtle shimmer sweep across the whole panel — decorative only, gated for reduced motion */}
             <motion.div
               aria-hidden="true"
-              className="absolute left-0 right-0 h-0.5 motion-reduce:hidden"
+              className="absolute inset-0 motion-reduce:hidden pointer-events-none"
               style={{
-                background: 'linear-gradient(90deg, transparent, #2563EB 20%, #3B82F6 50%, #2563EB 80%, transparent)',
-                boxShadow: '0 0 14px 2px rgba(37,99,235,0.55)',
+                background:
+                  'linear-gradient(100deg, transparent 30%, rgba(37,99,235,0.05) 45%, rgba(59,130,246,0.09) 50%, rgba(37,99,235,0.05) 55%, transparent 70%)',
+                backgroundSize: '250% 100%',
               }}
-              initial={{ top: '0%', opacity: 0 }}
-              animate={{ top: ['0%', '100%'], opacity: [0, 1, 1, 0] }}
-              transition={{ duration: 2, ease: 'easeInOut', repeat: Infinity, times: [0, 0.08, 0.92, 1] }}
+              animate={{ backgroundPosition: ['0% 0%', '100% 0%'] }}
+              transition={{ duration: 3.2, ease: 'linear', repeat: Infinity }}
             />
 
+            {/* Live elapsed-time indicator */}
+            <div className="absolute top-5 right-5 inline-flex items-center gap-1.5 rounded-full bg-[#F5F8FF] border border-[#E2E8F0] px-3 py-1 text-[11px] font-semibold text-[#475569] tabular-nums">
+              <Clock className="w-3 h-3 text-[#2563EB]" aria-hidden="true" />
+              <span aria-live="off">{elapsedSec}s elapsed</span>
+            </div>
+
+            {/* Screen-reader-only live announcement of the current stage */}
+            <p className="sr-only" aria-live="polite">
+              {SCAN_STEPS[clampedStep].label}
+            </p>
+
             <div className="relative z-10 flex flex-col items-center w-full max-w-sm px-6">
-              <div className="w-20 h-20 rounded-2xl bg-[#EFF6FF] border border-[#2563EB]/15 flex items-center justify-center mb-7">
-                <ScanLine className="w-9 h-9 text-[#2563EB] animate-pulse" strokeWidth={1.75} />
+              {/* Document silhouette with a scan line genuinely sweeping across it */}
+              <div className="relative w-36 h-44 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden mb-7 shadow-[inset_0_1px_3px_rgba(15,23,42,0.06)]">
+                <div className="absolute inset-0 p-4 flex flex-col gap-2 opacity-70">
+                  <div className="h-2 w-1/2 rounded-full bg-[#CBD5E1]" />
+                  {[85, 65, 90, 45, 75, 60].map((w, i) => (
+                    <div key={i} className="h-1.5 rounded-full bg-[#E2E8F0]" style={{ width: `${w}%` }} />
+                  ))}
+                </div>
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute left-0 right-0 h-10 motion-reduce:hidden"
+                  style={{
+                    background:
+                      'linear-gradient(180deg, transparent, rgba(37,99,235,0.16) 45%, rgba(37,99,235,0.16) 55%, transparent)',
+                  }}
+                  initial={{ top: '-15%' }}
+                  animate={{ top: ['-15%', '100%'] }}
+                  transition={{ duration: 2.1, ease: 'easeInOut', repeat: Infinity }}
+                />
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute left-0 right-0 h-0.5 motion-reduce:hidden"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent, #2563EB 30%, #3B82F6 50%, #2563EB 70%, transparent)',
+                    boxShadow: '0 0 12px 2px rgba(37,99,235,0.6)',
+                  }}
+                  initial={{ top: '-2%', opacity: 0 }}
+                  animate={{ top: ['-2%', '98%'], opacity: [0, 1, 1, 0] }}
+                  transition={{ duration: 2.1, ease: 'easeInOut', repeat: Infinity, times: [0, 0.1, 0.9, 1] }}
+                />
+                <div className="motion-reduce:block hidden absolute inset-x-0 top-1/2 h-0.5 bg-[#2563EB]/50" />
               </div>
 
               <h3 className="font-display text-2xl font-bold text-[#0F172A] mb-1 tracking-tight text-center">
                 Scanning your document
               </h3>
-              <p className="text-[#475569] text-xs mb-8 text-center">This usually takes a few seconds</p>
+              <p className="text-[#94A3B8] text-[11px] uppercase tracking-widest font-semibold mb-6 text-center">
+                Progress indication — not a fixed countdown
+              </p>
 
-              <div className="w-full space-y-4">
-                {SCAN_STEPS.map((step, i) => {
-                  const isDone = scanStep > i;
-                  const isActive = scanStep === i;
-                  return (
-                    <motion.div
-                      key={step.label}
-                      initial={false}
-                      animate={{
-                        opacity: scanStep >= i ? 1 : 0.4,
-                        x: scanStep >= i ? 0 : -8,
-                      }}
-                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                      className="flex items-center gap-4"
-                    >
-                      <div
-                        className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center transition-colors duration-300 ${
-                          isDone
-                            ? 'bg-[#2563EB] text-white'
-                            : isActive
-                            ? 'bg-[#2563EB] text-white animate-pulse'
-                            : 'bg-[#EFF6FF] text-[#475569] border border-[#E2E8F0]'
-                        }`}
-                      >
-                        {isDone ? <ShieldCheck className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
-                      </div>
-                      <span
-                        className={`text-sm ${
-                          isActive ? 'text-[#2563EB] font-semibold' : isDone ? 'text-[#0F172A]' : 'text-[#475569]'
-                        }`}
-                      >
-                        {step.label}
-                      </span>
-                    </motion.div>
-                  );
-                })}
+              {/* Progress rail */}
+              <div className="w-full h-1.5 rounded-full bg-[#EFF6FF] overflow-hidden mb-8">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: 'linear-gradient(90deg, #2563EB, #3B82F6)' }}
+                  animate={{ width: `${railPct}%` }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                />
               </div>
+
+              <div className="w-full relative pl-1">
+                {/* Rail track connecting the stages */}
+                <div className="absolute left-3 top-3 bottom-3 w-px bg-[#E2E8F0]" aria-hidden="true" />
+                <motion.div
+                  className="absolute left-3 top-3 w-px bg-[#2563EB]"
+                  initial={{ height: '0%' }}
+                  animate={{ height: `${(clampedStep / (SCAN_STEPS.length - 1)) * 100}%` }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  aria-hidden="true"
+                />
+
+                <div className="space-y-5">
+                  {SCAN_STEPS.map((step, i) => {
+                    const isDone = scanStep > i;
+                    const isActive = scanStep === i;
+                    return (
+                      <motion.div
+                        key={step.label}
+                        initial={false}
+                        animate={{
+                          opacity: scanStep >= i ? 1 : 0.4,
+                          x: scanStep >= i ? 0 : -8,
+                        }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        className="relative flex items-center gap-4"
+                      >
+                        <div
+                          className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                            isDone
+                              ? 'bg-[#2563EB] text-white'
+                              : isActive
+                              ? 'bg-[#2563EB] text-white animate-pulse'
+                              : 'bg-white text-[#475569] border border-[#E2E8F0]'
+                          }`}
+                        >
+                          {isDone ? <ShieldCheck className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
+                        </div>
+                        <span
+                          className={`text-sm ${
+                            isActive ? 'text-[#2563EB] font-semibold' : isDone ? 'text-[#0F172A]' : 'text-[#475569]'
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {elapsedSec >= REASSURANCE_AFTER_SEC && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="text-[#475569] text-xs text-center mt-7 max-w-xs"
+                  >
+                    Deep analysis — larger documents take longer.
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         ) : (
@@ -155,14 +280,16 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
             tabIndex={0}
             aria-label="Upload a document to scan"
             initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0, scale: dragActive ? 1.012 : 1 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             whileHover={{ y: -2 }}
             onClick={onButtonClick}
             onKeyDown={onCardKeyDown}
             className={`w-full rounded-3xl border-2 border-dashed cursor-pointer relative overflow-hidden group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2 transition-colors duration-200 ${
-              dragActive ? 'border-[#2563EB] bg-[#DBEAFE]' : 'border-[#2563EB]/40 bg-[#F5F8FF] hover:bg-[#EFF6FF] hover:border-[#2563EB]/70'
+              dragActive
+                ? 'border-[#2563EB] bg-[#DBEAFE]'
+                : 'border-[#2563EB]/40 bg-gradient-to-br from-[#F5F8FF] via-white to-[#EFF6FF] hover:bg-[#EFF6FF] hover:border-[#2563EB]/70'
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -185,25 +312,70 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
               capture="environment"
             />
 
-            <div className="flex flex-col items-center text-center px-6 py-14 sm:py-16">
-              <motion.div
-                animate={dragActive ? { scale: 1.1, rotate: 3 } : { scale: 1, rotate: 0 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className={`w-20 h-20 rounded-2xl bg-white border border-[#E2E8F0] flex items-center justify-center mb-6 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.12)] transition-colors duration-300 ${
-                  dragActive ? 'text-[#2563EB]' : 'text-[#2563EB]/60 group-hover:text-[#2563EB]'
-                }`}
-              >
-                <DocScan className="w-10 h-10" />
-              </motion.div>
+            {/* Soft depth glow behind the whole card */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-24 -right-16 w-64 h-64 rounded-full blur-3xl opacity-60"
+              style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.14), transparent 70%)' }}
+            />
+
+            {/* Animated marching-ants border on drag-over — reduced-motion gets the static CSS dashed border only */}
+            <AnimatePresence>
+              {dragActive && (
+                <motion.svg
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full motion-reduce:hidden pointer-events-none"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <motion.rect
+                    x="3"
+                    y="3"
+                    width="calc(100% - 6px)"
+                    height="calc(100% - 6px)"
+                    rx="22"
+                    fill="none"
+                    stroke="#2563EB"
+                    strokeWidth="2"
+                    strokeDasharray="10 8"
+                    animate={{ strokeDashoffset: [0, -36] }}
+                    transition={{ duration: 1.1, ease: 'linear', repeat: Infinity }}
+                  />
+                </motion.svg>
+              )}
+            </AnimatePresence>
+
+            <div className="relative z-10 flex flex-col items-center text-center px-6 py-12 sm:py-14">
+              <div className="relative w-20 h-20 mb-6">
+                {/* Stacked-paper depth behind the mark */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-2xl bg-white border border-[#E2E8F0] rotate-6 translate-x-1.5 translate-y-1 opacity-50"
+                />
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-2xl bg-white border border-[#E2E8F0] -rotate-3 translate-x-0.5 opacity-75"
+                />
+                <motion.div
+                  animate={dragActive ? { scale: 1.08, rotate: 3 } : { scale: 1, rotate: 0 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  className={`relative w-20 h-20 rounded-2xl bg-white border border-[#E2E8F0] flex items-center justify-center shadow-[0_10px_30px_-12px_rgba(15,23,42,0.12)] transition-colors duration-300 ${
+                    dragActive ? 'text-[#2563EB]' : 'text-[#2563EB]/60 group-hover:text-[#2563EB]'
+                  }`}
+                >
+                  <DocScan className="w-10 h-10" />
+                </motion.div>
+              </div>
 
               <h3 className="font-display text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-2">
                 {dragActive ? 'Drop to scan' : 'Drag & drop your document'}
               </h3>
-              <p className="text-[#475569] text-sm mb-9 max-w-sm leading-relaxed">
+              <p className="text-[#475569] text-sm mb-8 max-w-sm leading-relaxed">
                 PNG, JPG or PDF · certificates, invoices, IDs, statements
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-center gap-3 mb-8">
                 <motion.button
                   whileHover={{ y: -2, boxShadow: '0 20px 40px -16px rgba(37,99,235,0.45)' }}
                   whileTap={{ y: 0 }}
@@ -212,7 +384,7 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
                     e.stopPropagation();
                     onButtonClick();
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#2563EB] text-white text-sm font-semibold px-6 py-3 shadow-[0_10px_24px_-8px_rgba(37,99,235,0.5)]"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#2563EB] text-white text-sm font-semibold px-6 py-3 shadow-[0_10px_24px_-8px_rgba(37,99,235,0.5)] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
                 >
                   Browse file <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
                 </motion.button>
@@ -224,13 +396,29 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
                     e.stopPropagation();
                     onCameraClick();
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-[#DBEAFE] text-[#1E40AF] text-sm font-semibold px-6 py-3 hover:border-[#2563EB]"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-[#DBEAFE] text-[#1E40AF] text-sm font-semibold px-6 py-3 hover:border-[#2563EB] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
                 >
                   <Camera className="w-4 h-4" /> Scan with camera
                 </motion.button>
               </div>
 
-              <p className="text-[#94A3B8] text-xs mt-8">Accepted formats: JPG, PNG or PDF</p>
+              {/* What the engine checks */}
+              <p className="text-[#94A3B8] text-[10px] uppercase tracking-widest font-semibold mb-3">
+                This scan checks
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-6 max-w-md">
+                {ENGINE_CHECKS.map(({ label, icon: Icon }) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#EFF6FF] text-[#1E40AF] text-xs font-medium px-3 py-1 border border-[#DBEAFE]"
+                  >
+                    <Icon className="w-3 h-3" aria-hidden="true" />
+                    {label}
+                  </span>
+                ))}
+              </div>
+
+              <p className="text-[#94A3B8] text-xs">Accepted formats: JPG, PNG or PDF</p>
             </div>
 
             <CornerTicks className="text-[#2563EB]/25" />

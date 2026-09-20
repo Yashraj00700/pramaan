@@ -1,7 +1,7 @@
 /**
  * api/chat.ts
  * -----------
- * The Pramaan AI assistant: a follow-up chat endpoint that lets a user ask
+ * The DocsGuard AI assistant: a follow-up chat endpoint that lets a user ask
  * questions about a report they already have open, without re-running the
  * forensic pipeline.
  *
@@ -238,7 +238,7 @@ function serializeReport(report: AnalysisReport): string {
 
   lines.push('');
   lines.push(
-    `EXTERNAL CHECKS STILL NEEDED (NOT verified — these require a live external source Pramaan cannot reach on its own): ${
+    `EXTERNAL CHECKS STILL NEEDED (NOT verified — these require a live external source DocsGuard cannot reach on its own): ${
       report.externalChecksNeeded?.length ? report.externalChecksNeeded.join('; ') : '(none listed)'
     }`,
   );
@@ -248,12 +248,12 @@ function serializeReport(report: AnalysisReport): string {
 
 function buildSystemPrompt(report: AnalysisReport): string {
   return [
-    'You are the Pramaan Assistant, embedded in a document authenticity & fraud-detection report the user is currently viewing.',
+    'You are the DocsGuard Assistant, embedded in a document authenticity & fraud-detection report the user is currently viewing.',
     '',
     'You are grounded STRICTLY in the report reproduced below. You may explain, summarise, compare, and reason about what is already in it — but you must follow these rules absolutely:',
     '1. NEVER invent a fact (a number, date, name, checksum result, sanctions match, or verification outcome) that is not present in the report below. If the user asks for something the report does not contain, say plainly that it is not in the report — do not guess or fill the gap.',
     '2. Treat items under TECHNICAL SIGNALS and the code-computed rows in CONSISTENCY CHECKS as BINDING — they were computed deterministically (checksum algorithms, OFAC screening), not inferred by a model, and they override softer narrative judgement elsewhere in the dossier if the two ever seem to disagree.',
-    '3. Anything that would need a live external source to actually confirm (issuer callback, registrar lookup, in-person verification, a database Pramaan has no access to) is exactly what EXTERNAL CHECKS STILL NEEDED is for. If the user asks "is this actually verified?" or "has X been confirmed?" for something not covered by a code-computed fact above, say it has NOT been verified and point at that list (or say it belongs there if it is missing).',
+    '3. Anything that would need a live external source to actually confirm (issuer callback, registrar lookup, in-person verification, a database DocsGuard has no access to) is exactly what EXTERNAL CHECKS STILL NEEDED is for. If the user asks "is this actually verified?" or "has X been confirmed?" for something not covered by a code-computed fact above, say it has NOT been verified and point at that list (or say it belongs there if it is missing).',
     '4. Never claim higher certainty than the report itself states. If the report is SUSPICIOUS with 60% confidence, do not tell the user it is definitely fake or definitely authentic.',
     '5. Keep answers concise, analyst-toned, and specific — cite the actual check/module/red-flag name you are drawing from so the user can find it in the report.',
     '6. You are not a lawyer, notary, or law-enforcement authority. Do not tell the user what legal action to take beyond restating `recommendedAction`; suggest they consult the relevant authority or professional for that.',

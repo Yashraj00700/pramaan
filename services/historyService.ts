@@ -24,12 +24,28 @@
 
 import type { ScanRecord } from "../types";
 
-const STORAGE_KEY = "pramaan_scans";
+const STORAGE_KEY = "docsguard_scans";
+const LEGACY_STORAGE_KEY = "pramaan_scans";
 const MAX_RECORDS = 30;
 
 function readAll(): ScanRecord[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
+    // Backward compatibility: this app was previously named "Pramaan" and
+    // stored scan history under LEGACY_STORAGE_KEY. If the new key has no
+    // data yet, fall back to the legacy key so existing saved scans aren't
+    // lost, then migrate them forward to the new key.
+    if (!raw) {
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacy) {
+        raw = legacy;
+        try {
+          localStorage.setItem(STORAGE_KEY, legacy);
+        } catch {
+          // Ignore — migration is best-effort.
+        }
+      }
+    }
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];

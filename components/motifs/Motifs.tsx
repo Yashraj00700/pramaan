@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * Pramaan marks — clean, flat, premium line-art. NO fake-3D / wireframe kitsch.
+ * DocsGuard marks — clean, flat, premium line-art. NO fake-3D / wireframe kitsch.
  * Thin strokes, one blue accent, designed to sit on white. Each takes { className }.
  * Legacy names are exported as aliases at the bottom so existing imports keep compiling.
  */

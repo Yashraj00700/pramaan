@@ -1,8 +1,8 @@
-# Pramaan — प्रमाण
+# DocsGuard
 
 **Tagline:** Upload any document. Know in seconds if it is real.
 
-Pramaan (Hindi/Sanskrit: "proof" / "certificate of authenticity") is a universal AI document-authenticity and fraud-detection web app. Its hero use case is Madhya Pradesh government scheme documents — fake caste, income, and domicile certificates, tampered marksheets, forged bank statements used to claim benefits like Ladli Behna, scholarships, PDS ration cards, and subsidised jobs/tenders. The same engine also works for banking/KYC documents, trade invoices, HR/education records, and rental or marketplace listings — anywhere a document is used to establish trust.
+DocsGuard is a universal AI document-authenticity and fraud-detection web app. Its hero use case is Madhya Pradesh government scheme documents — fake caste, income, and domicile certificates, tampered marksheets, forged bank statements used to claim benefits like Ladli Behna, scholarships, PDS ration cards, and subsidised jobs/tenders. The same engine also works for banking/KYC documents, trade invoices, HR/education records, and rental or marketplace listings — anywhere a document is used to establish trust.
 
 ---
 
@@ -17,7 +17,7 @@ Madhya Pradesh (and India generally) runs welfare and benefit programs at massiv
 
 ## 2. Solution
 
-Pramaan lets anyone — a scheme officer, a bank clerk, an HR recruiter, or a citizen checking their own paperwork — **upload a document (image or PDF) and get a structured authenticity verdict in seconds**, with the evidence highlighted, not just asserted.
+DocsGuard lets anyone — a scheme officer, a bank clerk, an HR recruiter, or a citizen checking their own paperwork — **upload a document (image or PDF) and get a structured authenticity verdict in seconds**, with the evidence highlighted, not just asserted.
 
 Pipeline:
 
@@ -25,13 +25,13 @@ Pipeline:
 2. **Deterministic metadata extraction** — before any AI call, the app computes a SHA-256 hash of the file and (for PDFs) reads structural/producer metadata via `pdf-lib`-style inspection: creation/modification dates, producer/editor software strings, and other signals that do not require interpretation — the kind of evidence a forensic tool would report, not guess.
 3. **Claude vision + reasoning** — the document image and the deterministic signals are sent to Claude with a forced structured-output tool call. Claude reads the document the way a trained clerk would: extracts fields, cross-checks them against each other (does the DOB imply the stated age? does the issuing office match the stated district? is the stamp/seal placement, font, and layout consistent with a genuine template of that document type?), and flags inconsistencies.
 4. **Verdict + evidence** — the app renders a verdict (AUTHENTIC / SUSPICIOUS / LIKELY_FAKE), a 0–100 risk score, a plain-language summary, a list of red flags with severity and evidence, a table of consistency checks (PASS/FAIL/WARN), the extracted fields, the technical (deterministic) signals, and — where the document is an image — bounding boxes drawn directly over the suspicious regions so the reviewer can see exactly what triggered the flag.
-5. **Recommended action + what still needs live verification** — Pramaan is explicit about what it *cannot* confirm from the document alone (e.g. "verify this certificate number against the e-District portal," "confirm this UDISE code against the school's official record") rather than pretending to have checked an external database it never touched.
+5. **Recommended action + what still needs live verification** — DocsGuard is explicit about what it *cannot* confirm from the document alone (e.g. "verify this certificate number against the e-District portal," "confirm this UDISE code against the school's official record") rather than pretending to have checked an external database it never touched.
 
 ## 3. Why it wins / uniqueness
 
-- **Honest architecture, not a black box.** Pramaan separates what is *measured* (file hash, PDF producer metadata, structural signals — deterministic, reproducible, and independent of the AI) from what is *reasoned* (Claude's visual and cross-field analysis). The UI never blends the two into a single unexplained "AI score" — every red flag cites its evidence.
+- **Honest architecture, not a black box.** DocsGuard separates what is *measured* (file hash, PDF producer metadata, structural signals — deterministic, reproducible, and independent of the AI) from what is *reasoned* (Claude's visual and cross-field analysis). The UI never blends the two into a single unexplained "AI score" — every red flag cites its evidence.
 - **Cross-field and cross-document logic that generic OCR/forensics tools miss.** A standard OCR or ELA (error-level analysis) tool tells you "this region was edited." It does not tell you "the applicant's declared age doesn't match their date of birth" or "this income certificate's issuing tehsil doesn't exist in the district stated on the same form." That reasoning step is where Claude's language+vision understanding adds value that pixel-forensics alone cannot.
-- **It does not fabricate confidence.** Pramaan explicitly does **not** claim to have checked a certificate number against DigiLocker, an e-District registry, a company's MCA/GST record, or a sanctions list unless that integration actually exists. Where such verification would be needed, the report lists it under `externalChecksNeeded` rather than silently assuming the document is genuine (or fake) because a number "looks" like a valid ID.
+- **It does not fabricate confidence.** DocsGuard explicitly does **not** claim to have checked a certificate number against DigiLocker, an e-District registry, a company's MCA/GST record, or a sanctions list unless that integration actually exists. Where such verification would be needed, the report lists it under `externalChecksNeeded` rather than silently assuming the document is genuine (or fake) because a number "looks" like a valid ID.
 - **Universal, not single-purpose.** The same `AnalysisReport` schema and pipeline work whether the input is a caste certificate, a bank statement, a trade invoice, or a rental agreement — the document type is detected and reported, not hard-coded.
 - **Built for a 2-hour hackathon and it still works end-to-end.** No mocked demo data — a real file, uploaded live, produces a real structured verdict.
 
@@ -47,7 +47,7 @@ Pipeline:
 - No live integration with DigiLocker, e-District, UIDAI/Aadhaar verification, MCA/GST company registries, or sanctions lists — these are flagged as "needs external verification," not simulated.
 - No user authentication/multi-tenant accounts in the hackathon build (Supabase-ready schema exists for later — see Architecture).
 - No bulk/batch upload or API access in v1.
-- No legal or evidentiary certification — Pramaan is a triage/screening aid, not a court-admissible forensic report.
+- No legal or evidentiary certification — DocsGuard is a triage/screening aid, not a court-admissible forensic report.
 
 ### 4.3 Primary user + easy onboarding
 Primary user: an **MP government scheme officer or front-desk verification clerk** with low technical comfort, on a shared or low-spec device, who needs a fast yes/no/needs-review signal. Secondary users: bank KYC staff, HR recruiters, landlords/marketplace moderators, and citizens self-checking a document before submission.
@@ -133,9 +133,9 @@ interface ScanRecord { id: string; createdAt: number; fileName: string; mediaTyp
 
 ## 7. Risks / Limitations (honest)
 
-- **Pramaan is a screening aid, not a legal verdict.** A LIKELY_FAKE result should trigger manual review, not automatic rejection; a false positive (genuine document flagged) is possible, especially for low-quality scans or unusual-but-legitimate formats.
+- **DocsGuard is a screening aid, not a legal verdict.** A LIKELY_FAKE result should trigger manual review, not automatic rejection; a false positive (genuine document flagged) is possible, especially for low-quality scans or unusual-but-legitimate formats.
 - **No live external verification yet.** Any check that would require querying a government or financial database is explicitly listed under `externalChecksNeeded` and is *not* performed — the app does not claim otherwise.
 - **Vision-model limitations.** Claude's document reading can misread poor-quality scans, unusual regional certificate formats it hasn't seen examples of, or non-Latin/regional-script fields; confidence scores should be read alongside the verdict, not in isolation.
 - **Metadata signals are circumstantial, not conclusive.** A "genuine-looking" PDF producer string does not prove authenticity, and a re-saved/re-scanned genuine document can look similar to a tampered one at the metadata level — these are signals that support the AI's reasoning, not standalone proof.
-- **Adversarial evasion.** A sufficiently careful forgery (correct fonts, metadata stripped/spoofed, printed-and-rescanned to remove digital edit traces) can reduce the signal available to both the deterministic and AI layers. Pramaan raises the bar for casual fraud; it is not presented as unbeatable.
+- **Adversarial evasion.** A sufficiently careful forgery (correct fonts, metadata stripped/spoofed, printed-and-rescanned to remove digital edit traces) can reduce the signal available to both the deterministic and AI layers. DocsGuard raises the bar for casual fraud; it is not presented as unbeatable.
 - **Privacy.** Uploaded documents may contain sensitive personal data (caste, income, ID numbers). They should be handled per applicable data-protection requirements; the hackathon build does not yet implement encryption-at-rest or a data-retention policy — see Roadmap/SETUP for what is and isn't in place at demo time.

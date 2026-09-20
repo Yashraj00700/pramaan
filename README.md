@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/pramaan-banner.svg" alt="Pramaan — AI Document Authenticity & Fraud Detection" width="100%" />
+  <img src="docs/assets/pramaan-banner.svg" alt="DocsGuard — AI Document Authenticity & Fraud Detection" width="100%" />
 </p>
 
-<h1 align="center">Pramaan · प्रमाण</h1>
+<h1 align="center">DocsGuard</h1>
 <p align="center"><b>Upload any document. Know in seconds if it's real.</b><br/>
 An AI document-authenticity & fraud-detection app — built for government schemes, and for everyone.</p>
 
@@ -27,7 +27,7 @@ detected **₹36,374 cr** of fake-invoice GST-ITC fraud in FY24–25 alone; Madh
 Vyapam and scholarship scandals show the human cost). The same fake-document problem hits
 banks, landlords, employers and marketplaces every day.
 
-## What Pramaan does
+## What DocsGuard does
 
 Upload a document (photo or PDF). In seconds you get a clear, defensible verdict:
 
@@ -43,7 +43,7 @@ Upload a document (photo or PDF). In seconds you get a clear, defensible verdict
 ## Why it's different — the honest architecture
 
 Most "AI verifiers" just ask a model and let it hallucinate registry hits and WHOIS data.
-Pramaan is built to be **trustworthy enough for a government officer**:
+DocsGuard is built to be **trustworthy enough for a government officer**:
 
 1. **Deterministic signals, in code** — SHA-256 fingerprint, file size, PDF producer +
    creation‑vs‑modification dates (`pdf-lib`), image EXIF / editor-software tags (`exifr`).
@@ -112,5 +112,5 @@ bulk + API, tamper-proof audit trail. Priorities in [docs/DATA_SOURCES.md](docs/
 
 ---
 
-> ⚠️ Pramaan assists human review; it does not replace source verification. Every report lists
+> ⚠️ DocsGuard assists human review; it does not replace source verification. Every report lists
 > what still needs a live check. Verdicts are AI-assisted assessments, not legal determinations.

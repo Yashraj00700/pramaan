@@ -1,4 +1,4 @@
-# Pramaan — Design System (WHITE + BLUE)  ·  authoritative
+# DocsGuard — Design System (WHITE + BLUE)  ·  authoritative
 
 > This supersedes the earlier navy version and `docs/DESIGN_REFERENCE.md` (navy). The app is a
 > **white-background, blue-accent, fintech-trust** product. Clean, confident, editorial — NOT a
@@ -46,7 +46,7 @@ Use arbitrary Tailwind values, e.g. `bg-[#2563EB]`, `text-[#0F172A]`, `border-[#
 - Ghost/link: `text-[#2563EB] font-semibold hover:underline`.
 
 ## Components
-- **Top nav:** white, sticky, hairline bottom, subtle blur (`bg-white/80 backdrop-blur border-b border-[#E2E8F0]`). Logo = ShieldCheck in a blue rounded tile + "Pramaan" in font-display. Primary pill CTA right.
+- **Top nav:** white, sticky, hairline bottom, subtle blur (`bg-white/80 backdrop-blur border-b border-[#E2E8F0]`). Logo = ShieldCheck in a blue rounded tile + "DocsGuard" in font-display. Primary pill CTA right.
 - **Verdict badge:** pill, colored by verdict — AUTHENTIC `bg-[#ECFDF5] text-[#047857] border-[#A7F3D0]`; SUSPICIOUS `bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]`; LIKELY_FAKE `bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]`. Big, with an icon.
 - **Score ring:** SVG donut, stroke colored by band (green/amber/red), animates 0→N, big number in center (font-display).
 - **Dashed upload card:** `bg-[#F5F8FF] border-2 border-dashed border-[#2563EB]/40 rounded-3xl` with a light doc icon, bold title, primary button; hover tint deepens.

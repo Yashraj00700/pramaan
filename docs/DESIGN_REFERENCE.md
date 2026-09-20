@@ -1,4 +1,4 @@
-# Pramaan — Visual Reference Analysis (ground truth)
+# DocsGuard — Visual Reference Analysis (ground truth)
 
 Distilled from the user's reference design (the "DocImmutable" doc-verification UI + motion clip).
 This is the authoritative description of the target look. Design agents expand this into
@@ -67,7 +67,7 @@ Motion is smooth and restrained (gentle float, scroll reveal, hover lift) — ne
 - Verdict reveal: the score ring **animates from 0**, badge pops in.
 - Respect `prefers-reduced-motion` (disable loops/large transitions).
 
-## What to change vs keep (for Pramaan)
+## What to change vs keep (for DocsGuard)
 - KEEP: cobalt blue + white-on-navy bento, bold Poppins headings, wireframe-3D + blue-crystal motifs, dashed upload cards, dark pill buttons, smooth restrained motion.
 - CHANGE the story: this is **AI document authenticity & fraud detection**, NOT NFT minting.
   The crystal reads as "verified/authentic". Swap "mint NFT" language for "verify / detect fraud".

@@ -2,7 +2,7 @@
 
 > Research date: 2026-09-20. Scope: the three projects named in the research brief, plus a
 > systematic skim of the open-source "document verification" landscape on GitHub, plus a
-> literature check on forensic techniques Pramaan doesn't use yet. Every factual claim below
+> literature check on forensic techniques DocsGuard doesn't use yet. Every factual claim below
 > (license, star count, language, technique) is sourced — see the citation after each claim and
 > the **Sources** list at the end. Where GitHub's own API reports `license: null` for a repo,
 > that is stated plainly: it means **no LICENSE file was detected**, not "MIT" or "free to use."
@@ -31,17 +31,17 @@ fetched via a route that didn't rate-limit.
 2. **MRZ checksum validation is the single best "quick win" in this whole research effort.**
    ICAO 9303's check-digit algorithm is pure arithmetic (weighted mod-10 sum, no ML, no OCR
    engine needed if Claude — which already reads text off the document — transcribes the MRZ
-   string). It slots directly into Pramaan's existing `api/verification.ts` deterministic
+   string). It slots directly into DocsGuard's existing `api/verification.ts` deterministic
    module, next to the Aadhaar Verhoeff and PAN/GSTIN/IFSC/IBAN checks, with the exact same
    "honesty contract" (a checksum FAIL is proof; a PASS only proves well-formedness).
 3. **PDF object/xref-level forgery analysis is a second strong quick win** that the brief didn't
-   explicitly list as a "known gap" but should be treated as one: Pramaan's PDF handling today
+   explicitly list as a "known gap" but should be treated as one: DocsGuard's PDF handling today
    (`pdf-lib` in `api/_core.ts`) reads *metadata* (producer, creation/mod dates) but never
    inspects the file's incremental-update structure — multiple `xref`/`trailer` chains, objects
    modified after signing, mismatched object generation numbers — which is a much stronger,
    harder-to-fake signal for PDF-based certificates than metadata alone, and is pure byte
    parsing with zero new dependencies.
-4. **Pramaan's single-pass ELA (JPEG resave at q=90, global mean-diff) is a real but narrow
+4. **DocsGuard's single-pass ELA (JPEG resave at q=90, global mean-diff) is a real but narrow
    technique**, and the brief's own observation — that it's weak on flat, vector-rendered
    documents — matches the forensics literature: ELA depends on there being a *prior* JPEG
    compression history to diff against. A PDF rendered to PNG, a vector-drawn certificate, or an
@@ -63,18 +63,18 @@ fetched via a route that didn't rate-limit.
 
 ## 2. Comparison table
 
-| Project | What it does | Core technique | License | Language/runtime | Usable in Pramaan's Vercel/Node stack? | What it would add |
+| Project | What it does | Core technique | License | Language/runtime | Usable in DocsGuard's Vercel/Node stack? | What it would add |
 |---|---|---|---|---|---|---|
 | [MiniAiLive/ID-DocumentRecognition-Windows](https://github.com/MiniAiLive/ID-DocumentRecognition-Windows) | ID/passport/driver's-license OCR + data extraction, 200+ countries, 8,000+ templates | Neural-net OCR + MRZ recognition + template matching | **No LICENSE file; commercial, trial-only** — repo says "Contact US to get a trial License" [[1]](#s1) | Python 3.6+, **Windows only**, on-prem server | No — Windows-only binary/trial SDK, no license to redistribute or self-host | Template-matched field extraction across many ID formats (if licensed) |
-| [amaljoseph/…YOLOv5-and-CycleGAN](https://github.com/amaljoseph/EndToEnd_Signature-Detection-Cleaning-Verification_System_using_YOLOv5-and-CycleGAN) | Detects signatures on a scanned doc, cleans overlapping noise, verifies against a reference signature | YOLOv5 (detection) → CycleGAN (cleaning) → VGG16 feature embedding + cosine similarity (verification) | **No LICENSE file at all** — no grant to use/modify/redistribute [[2]](#s2). Its YOLOv5 dependency (Ultralytics) is separately **AGPL-3.0**, which forces full source disclosure of anything that ships it commercially, or purchase of Ultralytics' Enterprise License [[7]](#s7) | Python, PyTorch + TensorFlow/Keras, Streamlit demo | No, directly — needs a Python/PyTorch+TF runtime a Vercel Node function can't host, **and** has no license grant, **and** its detector dependency is AGPL | Signature presence detection + genuine-vs-forged similarity scoring — Pramaan has none of this today |
+| [amaljoseph/…YOLOv5-and-CycleGAN](https://github.com/amaljoseph/EndToEnd_Signature-Detection-Cleaning-Verification_System_using_YOLOv5-and-CycleGAN) | Detects signatures on a scanned doc, cleans overlapping noise, verifies against a reference signature | YOLOv5 (detection) → CycleGAN (cleaning) → VGG16 feature embedding + cosine similarity (verification) | **No LICENSE file at all** — no grant to use/modify/redistribute [[2]](#s2). Its YOLOv5 dependency (Ultralytics) is separately **AGPL-3.0**, which forces full source disclosure of anything that ships it commercially, or purchase of Ultralytics' Enterprise License [[7]](#s7) | Python, PyTorch + TensorFlow/Keras, Streamlit demo | No, directly — needs a Python/PyTorch+TF runtime a Vercel Node function can't host, **and** has no license grant, **and** its detector dependency is AGPL | Signature presence detection + genuine-vs-forged similarity scoring — DocsGuard has none of this today |
 | [DoubangoTelecom/KYC-Documents-Verif-SDK](https://github.com/DoubangoTelecom/KYC-Documents-Verif-SDK) | ID/passport/visa/resident-card recognition + field extraction across 5,000+ formats, 140+ languages, 250+ countries | Deep learning (Keras/TensorFlow), GPU (CUDA) or CPU (Intel OpenVINO) accelerated | **No LICENSE file**; model weights are in a **private repo gated by approval**, and the README explicitly forbids decompiling/reverse-engineering [[3]](#s3) | C++, with C++/C#/Java/Python bindings, Windows/Linux x86_64 | No — proprietary model weights behind an approval gate, not redistributable, C++/native | Broad-format ID recognition (if licensed) |
 | [FaceOnLive/ID-Verification-OpenKYC](https://github.com/FaceOnLive/ID-Verification-OpenKYC) — landscape highlight | Face recognition + liveness + ID document recognition, marketed as "OpenKYC Community Project" | Deep learning face/liveness models | **`license: null`** — "Open" in name only [[4]](#s4) | JavaScript, 461★ | No — no license despite the "Open" branding | Same category as above; included to show this is a pattern, not an outlier |
-| [camilooscargbaptista/cv-fraud-detection](https://github.com/camilooscargbaptista/cv-fraud-detection) — landscape highlight | Document/image fraud detection pipeline: ELA, clone detection, CNN classifier, metadata checks | Pixel analysis (ELA, noise, clone detection) + CNN classification + EXIF/compression-history checks | **MIT** [[5]](#s5) | Python 3.10+, PyTorch, OpenCV | Reference-only (Python/PyTorch) — but MIT license means its *approach* (not code, directly) is safe to study and its architecture diagram validates Pramaan's own ELA+clone+metadata direction | Confirms clone/copy-move detection and multi-signal fusion as the right next step (see §5) |
-| [Attestto-com/attestto-verify](https://github.com/Attestto-com/attestto-verify) — landscape highlight | Client-side PDF digital-signature verification (PAdES/CAdES/PKCS#7/X.509) in the browser | Cryptographic signature chain validation, zero upload | **Apache-2.0** [[6]](#s6) | **TypeScript**, runs in-browser | Directly relevant architecture (permissive license, JS/TS) — but solves a different problem (verifying a *real* PKI-signed PDF) than Pramaan's (assessing an *unsigned* scanned/rendered document for tampering) | Not a capability gap for Pramaan today (no documents in scope carry PAdES signatures), but the license/stack is a useful proof that PDF-structure forensics belongs in TS, not Python |
-| [moov-io/watchman](https://github.com/moov-io/watchman) — landscape highlight | AML/CTF/KYC watchlist search across OFAC + several other global sanctions lists | Fuzzy name matching over multiple public list sources | **Apache-2.0** [[8]](#s8) | Go, 509★ | Not directly (Go service) but the *scope* is instructive | Pramaan's `api/sanctions.ts` only screens **OFAC SDN**; watchman/yente screen OFAC + EU + UN + UK + PEP lists — a genuine breadth gap outside this brief's explicit scope, noted for completeness |
-| [opensanctions/yente](https://github.com/opensanctions/yente) — landscape highlight | API over the OpenSanctions consolidated dataset (sanctions + PEP + crime lists, 100+ sources) | Entity resolution / fuzzy matching, Elasticsearch-backed | **MIT** [[9]](#s9) | Python, 178★ | Not directly (needs Elasticsearch + Python) | Same breadth gap as watchman — a much larger free list than OFAC alone, if Pramaan later wants to widen sanctions screening |
-| [konstantint/PassportEye](https://github.com/konstantint/PassportEye) — landscape highlight | Extracts MRZ text from passport/visa/ID images via OCR | Tesseract OCR + custom MRZ-region detection | **MIT** [[10]](#s10) | Python, 468★ | Not directly usable (Python/Tesseract) but validates that MRZ OCR is a solved, permissively-licensed problem elsewhere | Confirms Pramaan doesn't need to solve MRZ *OCR* — Claude's vision already transcribes text — only MRZ *checksum validation* is missing (see §5) |
-| [Arg0s1080/mrz](https://github.com/Arg0s1080/mrz) — landscape highlight | MRZ generator **and checker** (checksum validation) for TD1/TD2/TD3/MRVA/MRVB | Pure ICAO 9303 arithmetic, no ML | **GPL-3.0** [[11]](#s11) | Python, 389★ | Not directly portable (GPL-3.0 is copyleft; also Python) but **proves the checksum-only approach Pramaan should build is a known, minimal, non-ML pattern** — Pramaan should write its own small TS implementation rather than port GPL code | Validates the design in §5, item 1 — write our own, don't port theirs |
+| [camilooscargbaptista/cv-fraud-detection](https://github.com/camilooscargbaptista/cv-fraud-detection) — landscape highlight | Document/image fraud detection pipeline: ELA, clone detection, CNN classifier, metadata checks | Pixel analysis (ELA, noise, clone detection) + CNN classification + EXIF/compression-history checks | **MIT** [[5]](#s5) | Python 3.10+, PyTorch, OpenCV | Reference-only (Python/PyTorch) — but MIT license means its *approach* (not code, directly) is safe to study and its architecture diagram validates DocsGuard's own ELA+clone+metadata direction | Confirms clone/copy-move detection and multi-signal fusion as the right next step (see §5) |
+| [Attestto-com/attestto-verify](https://github.com/Attestto-com/attestto-verify) — landscape highlight | Client-side PDF digital-signature verification (PAdES/CAdES/PKCS#7/X.509) in the browser | Cryptographic signature chain validation, zero upload | **Apache-2.0** [[6]](#s6) | **TypeScript**, runs in-browser | Directly relevant architecture (permissive license, JS/TS) — but solves a different problem (verifying a *real* PKI-signed PDF) than DocsGuard's (assessing an *unsigned* scanned/rendered document for tampering) | Not a capability gap for DocsGuard today (no documents in scope carry PAdES signatures), but the license/stack is a useful proof that PDF-structure forensics belongs in TS, not Python |
+| [moov-io/watchman](https://github.com/moov-io/watchman) — landscape highlight | AML/CTF/KYC watchlist search across OFAC + several other global sanctions lists | Fuzzy name matching over multiple public list sources | **Apache-2.0** [[8]](#s8) | Go, 509★ | Not directly (Go service) but the *scope* is instructive | DocsGuard's `api/sanctions.ts` only screens **OFAC SDN**; watchman/yente screen OFAC + EU + UN + UK + PEP lists — a genuine breadth gap outside this brief's explicit scope, noted for completeness |
+| [opensanctions/yente](https://github.com/opensanctions/yente) — landscape highlight | API over the OpenSanctions consolidated dataset (sanctions + PEP + crime lists, 100+ sources) | Entity resolution / fuzzy matching, Elasticsearch-backed | **MIT** [[9]](#s9) | Python, 178★ | Not directly (needs Elasticsearch + Python) | Same breadth gap as watchman — a much larger free list than OFAC alone, if DocsGuard later wants to widen sanctions screening |
+| [konstantint/PassportEye](https://github.com/konstantint/PassportEye) — landscape highlight | Extracts MRZ text from passport/visa/ID images via OCR | Tesseract OCR + custom MRZ-region detection | **MIT** [[10]](#s10) | Python, 468★ | Not directly usable (Python/Tesseract) but validates that MRZ OCR is a solved, permissively-licensed problem elsewhere | Confirms DocsGuard doesn't need to solve MRZ *OCR* — Claude's vision already transcribes text — only MRZ *checksum validation* is missing (see §5) |
+| [Arg0s1080/mrz](https://github.com/Arg0s1080/mrz) — landscape highlight | MRZ generator **and checker** (checksum validation) for TD1/TD2/TD3/MRVA/MRVB | Pure ICAO 9303 arithmetic, no ML | **GPL-3.0** [[11]](#s11) | Python, 389★ | Not directly portable (GPL-3.0 is copyleft; also Python) but **proves the checksum-only approach DocsGuard should build is a known, minimal, non-ML pattern** — DocsGuard should write its own small TS implementation rather than port GPL code | Validates the design in §5, item 1 — write our own, don't port theirs |
 
 ---
 
@@ -90,7 +90,7 @@ OCR supporting 100+ languages; ships as an on-premise server (data doesn't leave
 **Technique.** Template-matched OCR: the incoming image is matched against a template library
 (by country/document type), then field regions from the matched template are OCR'd. This is the
 same broad approach as §5's "document-template/layout matching" gap — just done as a fully
-proprietary, closed product rather than something Pramaan could build toward.
+proprietary, closed product rather than something DocsGuard could build toward.
 
 **License.** GitHub reports `license: null` for this repo — confirmed via `gh api
 repos/MiniAiLive/ID-DocumentRecognition-Windows`. The README's own words are explicit: *"Feel
@@ -103,15 +103,15 @@ being hosted on GitHub.**
 Vercel Node function under any circumstance (wrong OS, wrong runtime, and no license to run it
 in production even if it were).
 
-**Verdict for Pramaan.** Not usable. Its only value to this research is confirming that
+**Verdict for DocsGuard.** Not usable. Its only value to this research is confirming that
 "template-matched OCR across many ID formats" is a real, demanded capability — but the honest
 path to it (if ever pursued) is either licensing a commercial SDK like this one, or building a
-much smaller in-house template library scoped to the handful of Indian document types Pramaan
+much smaller in-house template library scoped to the handful of Indian document types DocsGuard
 actually needs (see §5/§6, "template/layout matching").
 
 ### 3.2 amaljoseph/EndToEnd_Signature-Detection-Cleaning-Verification_System_using_YOLOv5-and-CycleGAN <a id="s2"></a>
 
-**What it does.** A three-stage pipeline directly on point for Pramaan's "no signature/stamp
+**What it does.** A three-stage pipeline directly on point for DocsGuard's "no signature/stamp
 detection or verification" gap:
 1. **Detection** — YOLOv5 locates signature regions on a scanned document (trained on a custom
    dataset derived from Tobacco800).
@@ -130,7 +130,7 @@ of that, its YOLOv5 dependency is Ultralytics' YOLOv5, which is licensed **AGPL-
 in a hosted product requires either open-sourcing the entire product under AGPL-3.0, or buying
 an Ultralytics Enterprise License [[github.com/orgs/ultralytics/discussions/3974]](https://github.com/orgs/ultralytics/discussions/3974), [[ultralytics.com/license]](https://www.ultralytics.com/license), [[github.com/ultralytics/ultralytics/issues/22458]](https://github.com/ultralytics/ultralytics/issues/22458). **Two independent
 licensing blockers stack here: no grant from the repo author, and AGPL copyleft from its
-dependency.** Pramaan cannot fork or vendor this code, full stop.
+dependency.** DocsGuard cannot fork or vendor this code, full stop.
 
 **Runtime.** Python, PyTorch (YOLOv5, CycleGAN) + TensorFlow/Keras (VGG16), Streamlit demo UI.
 Three separate deep-learning models in the inference path. This cannot run inside a Vercel Node
@@ -140,7 +140,7 @@ platform's function-size ceiling technically allows it), and Vercel Node functio
 
 **What deployment would honestly require** (the brief specifically asked for this): a
 **separate inference service** — e.g., a small Python/FastAPI container (Render, Fly.io, Cloud
-Run, a GPU-enabled host if latency matters) exposing `POST /verify-signature` that Pramaan's
+Run, a GPU-enabled host if latency matters) exposing `POST /verify-signature` that DocsGuard's
 existing `api/_core.ts` calls over HTTPS, the same way it already calls the Anthropic API. The
 alternative — exporting the three models to ONNX and running them via `onnxruntime-node` inside
 the Vercel function — is technically possible for a *single* small model but is a poor fit for
@@ -148,10 +148,10 @@ a *three-model* pipeline (detector + generator + embedder) under serverless cold
 package-size constraints; a dedicated service is the more honest recommendation. Either way,
 **this specific repo cannot be the source of the model** — it would need to be retrained from
 scratch on a properly licensed base (e.g. a permissively-licensed detector, or a paid Ultralytics
-license) and Pramaan's own signature-verification pairs, or a commercial signature-verification
+license) and DocsGuard's own signature-verification pairs, or a commercial signature-verification
 API would need to be purchased.
 
-**Verdict for Pramaan.** The pipeline shape (detect → clean → embed → cosine-similarity) is a
+**Verdict for DocsGuard.** The pipeline shape (detect → clean → embed → cosine-similarity) is a
 good reference architecture to imitate conceptually, but **zero code or weights from this repo
 are usable**, and building an equivalent requires a real ML project (data, training, a hosted
 inference service) — not a quick addition to `api/_core.ts`.
@@ -177,7 +177,7 @@ upfront trial-licensing detail published in the README.
 target at all; would need an FFI/native-addon bridge even if licensed, which rules out Vercel's
 managed Node runtime.
 
-**Verdict for Pramaan.** Not usable, for the same two reasons as the other two named repos:
+**Verdict for DocsGuard.** Not usable, for the same two reasons as the other two named repos:
 gated/undisclosed licensing, and a native/GPU runtime incompatible with Vercel serverless
 functions. Doubango's broader MRZ-specific product, `ultimateMRZ-SDK`, is likewise
 `license: NOASSERTION` (GitHub's marker for "a license file exists but isn't a recognized
@@ -208,14 +208,14 @@ data pulled live via `gh api search/repositories`:
   178★) — both are genuinely permissively licensed, and both screen **far more sanctions/PEP
   lists than OFAC alone**. This is outside the brief's explicit scope (which is about document
   forgery detection, not sanctions breadth), but it's a real, low-effort gap worth flagging:
-  Pramaan's `api/sanctions.ts` currently only screens the US Treasury OFAC SDN list, not EU, UN,
+  DocsGuard's `api/sanctions.ts` currently only screens the US Treasury OFAC SDN list, not EU, UN,
   UK, or PEP lists that these two free/open tools cover.
 - **MRZ specifically**: `konstantint/PassportEye` (MIT, Python, 468★) does MRZ *OCR*;
   `Arg0s1080/mrz` (GPL-3.0, Python, 389★) does MRZ *generation and checksum validation*;
   `sivakumar-mahalingam/fastmrz` (AGPL-3.0, Python, 190★) does MRZ extraction. None are portable
-  to Pramaan (wrong language, and GPL/AGPL preclude vendoring even if it were Node) — but
+  to DocsGuard (wrong language, and GPL/AGPL preclude vendoring even if it were Node) — but
   collectively they confirm MRZ checksum validation is a small, well-understood, already-solved
-  problem elsewhere that Pramaan should just reimplement from the public ICAO 9303 spec (see
+  problem elsewhere that DocsGuard should just reimplement from the public ICAO 9303 spec (see
   §5), not adapt from any of these repos.
 - **Signature-specific**: `ahmetozlu/signature_extractor` (MIT, Python, 526★) is a genuinely
   lightweight classical-CV (OpenCV + scikit-image thresholding/contour) signature extractor —
@@ -230,14 +230,14 @@ data pulled live via `gh api search/repositories`:
   [[github.com/camilooscargbaptista/cv-fraud-detection]](https://github.com/camilooscargbaptista/cv-fraud-detection). It's small (11★, unlikely
   production-hardened) but its documented architecture is a working validation that "ELA +
   clone/copy-move detection + compression-history analysis + metadata checks," run together, is
-  the right shape for exactly the gap the brief describes — Pramaan should treat it as a design
+  the right shape for exactly the gap the brief describes — DocsGuard should treat it as a design
   reference, not a code source (still Python/PyTorch).
 
 ---
 
-## 4. Techniques worth adopting — ranked by impact × feasibility in Pramaan's stack
+## 4. Techniques worth adopting — ranked by impact × feasibility in DocsGuard's stack
 
-Pramaan's stack is: Vercel Node serverless functions, TypeScript, `sharp` (libvips) for image
+DocsGuard's stack is: Vercel Node serverless functions, TypeScript, `sharp` (libvips) for image
 processing, `pdf-lib` for PDF structure, `exifr` for EXIF, `jsqr` for QR, and Claude (vision +
 tool use) for reasoning — no Python, no GPU, no long-running server by default. "Feasibility" below
 means "buildable inside that stack without adding a new runtime."
@@ -245,7 +245,7 @@ means "buildable inside that stack without adding a new runtime."
 | Tier | Technique | Impact | Feasibility (this stack) | Why |
 |---|---|---|---|---|
 | **1** | MRZ / ICAO 9303 check-digit validation | High — closes a named gap (passports, ID cards) entirely | Very high — pure arithmetic, no deps | Claude already transcribes the MRZ text off the image; the missing piece is a deterministic checksum function, exactly like the existing Aadhaar/PAN validators |
-| **1** | PDF object/xref-level tamper analysis | High — many of Pramaan's target documents (certificates, tender docs) are PDFs | High — pure byte/structure parsing, `pdf-lib` already a dependency | Detects incremental-update forgery (content changed after the document was "finalized") that metadata-only checks (producer/dates) miss entirely |
+| **1** | PDF object/xref-level tamper analysis | High — many of DocsGuard's target documents (certificates, tender docs) are PDFs | High — pure byte/structure parsing, `pdf-lib` already a dependency | Detects incremental-update forgery (content changed after the document was "finalized") that metadata-only checks (producer/dates) miss entirely |
 | **1** | Multi-quality JPEG ghost + quantization-table (DQT) analysis | Medium-High — directly answers the brief's "ELA is weak on flat/vector docs" finding | High — extends the existing single-pass `sharp` resave loop in `imageForensics()`; DQT parsing is a small custom byte parser, no new deps | Reveals localized double-compression the current single-quality global-mean-diff ELA misses, and works even when a single-pass ELA reads as uniformly flat |
 | **2** | Block-hash approximate copy-move (clone-stamp) detection | Medium — catches a specific, common forgery pattern (duplicated digit/signature/stamp) | Medium — new algorithm to write, but pure Node/`sharp`, no OpenCV | Weaker than true ORB/SIFT-based copy-move (misses rotated/rescaled clones) but catches the common unrotated case; a real engineering task, not a one-liner |
 | **2** | Region-specific ELA/noise statistics on Claude's own evidence bounding boxes | Medium — targets photo-substitution specifically | Medium-High — reuses the existing ELA pipeline and the `box: [ymin,xmin,ymax,xmax]` field the report schema (`types.ts:33`) already returns | A statistical proxy for "does the photo region's noise/compression profile match the rest of the page," not true face-swap detection, but real signal with no new model |
@@ -255,7 +255,7 @@ means "buildable inside that stack without adding a new runtime."
 | — | True ORB/SIFT-grade copy-move detection | Medium-High | **Not feasible in this stack** — needs OpenCV (native binding or Python) | See §6 |
 | — | Face-swap / photo-substitution deep-learning detection | High | **Not feasible in this stack** — needs a trained CNN + GPU-friendly runtime | See §6 |
 | — | Document-template/layout matching against known genuine templates | High | **Not a code problem — a data/ops problem.** Needs a curated, maintained template library (coordinates + reference images) per document type before any matching technique (keypoint alignment, perceptual hashing) is useful | See §6 |
-| **Skip** | PRNU / camera sensor-noise fingerprinting | Low **for Pramaan's actual documents** | Low | PRNU needs a reference population of images from a *known* camera to build a fingerprint, and typically degrades badly under recompression/rescaling — which is exactly what happens to a scanned/rephotographed/WhatsApp-forwarded government certificate before it reaches Pramaan. Recommended against, not merely deprioritized — including it in the roadmap would overstate what it can deliver here |
+| **Skip** | PRNU / camera sensor-noise fingerprinting | Low **for DocsGuard's actual documents** | Low | PRNU needs a reference population of images from a *known* camera to build a fingerprint, and typically degrades badly under recompression/rescaling — which is exactly what happens to a scanned/rephotographed/WhatsApp-forwarded government certificate before it reaches DocsGuard. Recommended against, not merely deprioritized — including it in the roadmap would overstate what it can deliver here |
 
 ---
 
@@ -285,14 +285,14 @@ fact.
      State that limit in the UI the same way the Aadhaar/PAN checks already do.
 
 2. **PDF object/xref-level tamper analysis** (not explicitly named in the brief, but directly
-   relevant to Pramaan's PDF-heavy document mix — certificates, tender submissions)
+   relevant to DocsGuard's PDF-heavy document mix — certificates, tender submissions)
    - PDF's incremental-update mechanism lets an editor append changes without rewriting the
      file; each save session adds its own `xref` table/stream with a `/Prev` pointer to the one
      before it. **One `xref` chain (single `%%EOF`) = created once and never resaved. Two or
      more chained `xref`/`trailer` sections = the file was opened and saved again after initial
      creation** [[dev.to/iurii_rogulia/pdf-xref-table-forensics-detect-edits-from-file-structure-3n7i]](https://dev.to/iurii_rogulia/pdf-xref-table-forensics-detect-edits-from-file-structure-3n7i), [[arxiv.org/pdf/2507.00827]](https://arxiv.org/pdf/2507.00827).
    - Concretely checkable signals, all pure byte/text scanning of the raw PDF bytes (which
-     Pramaan already has in hand before handing off to `pdf-lib`): count of `%%EOF` markers;
+     DocsGuard already has in hand before handing off to `pdf-lib`): count of `%%EOF` markers;
      count/chain of `startxref`/`trailer`/`/Prev` entries; whether **page content objects**
      (`/Contents`, `/Resources` on a `/Type /Page`) were touched in a *later* incremental update
      than the document's own creation objects (a strong tamper signal — legitimate re-saves
@@ -334,7 +334,7 @@ fact.
      half of the gap, not the vector/PDF half (which item 2, PDF structure analysis, and existing
      PDF metadata checks address instead).
 
-4. **PDF metadata cross-checks Pramaan already half-does, extended** — not a new technique, but
+4. **PDF metadata cross-checks DocsGuard already half-does, extended** — not a new technique, but
    worth calling out as a quick win alongside item 2: while adding xref/structure parsing,
    also cross-check the PDF `/ModDate` against the newest `xref` chain's implied save time, and
    flag PDF producer/creator strings that are inconsistent with the claimed document source
@@ -359,7 +359,7 @@ near-term addition.
 1. **Signature detection + verification (the YOLOv5/CycleGAN/VGG16-Siamese shape from §3.2).**
    Requires a Python/PyTorch(+TensorFlow) runtime. Realistic options, in order of effort:
    - **Cheapest to start, least Vercel-native**: a small hosted Python/FastAPI service (Render,
-     Fly.io, Railway, Cloud Run) exposing one endpoint; Pramaan's Vercel function calls it over
+     Fly.io, Railway, Cloud Run) exposing one endpoint; DocsGuard's Vercel function calls it over
      HTTPS the same way it already calls Anthropic. Straightforward, but adds a second service
      to operate, monitor, and pay for.
    - **More Vercel-native, more engineering**: export a *single* small model (e.g. just the
@@ -371,7 +371,7 @@ near-term addition.
      vendor space) instead of self-hosting anything.
    - **In every path, the specific repo researched here (§3.2) cannot be the source of the
      model** — no license grant, and its detector dependency is AGPL-3.0. A real implementation
-     needs either a properly licensed base model + Pramaan's own training data, a paid
+     needs either a properly licensed base model + DocsGuard's own training data, a paid
      Ultralytics Enterprise license, or a different base architecture entirely.
 
 2. **True copy-move forgery detection at ORB/SIFT quality** (rotation/scale-invariant, the
@@ -387,32 +387,32 @@ near-term addition.
    noise-residual + RGB architectures, or dedicated face-swap classifiers)
    [[arxiv.org/pdf/1909.04217]](https://arxiv.org/pdf/1909.04217), [[arxiv.org/pdf/1803.11276]](https://arxiv.org/pdf/1803.11276) — needs a trained model, a GPU-friendly
    runtime, and ideally a labeled dataset of genuine vs. substituted ID photos to validate
-   against, which Pramaan does not currently have. This is a real ML project, not a service
+   against, which DocsGuard does not currently have. This is a real ML project, not a service
    deployment problem alone.
 
 4. **Document-template/layout matching against known genuine templates.** This is fundamentally
    a **data curation problem before it's a technique problem**: the matching technique itself
    (perceptual-hash or keypoint-based alignment against a reference layout) is buildable in
    Node/`sharp`, but it's useless without a maintained library of genuine reference
-   templates/coordinates per document type Pramaan wants to check (each Indian state's caste
+   templates/coordinates per document type DocsGuard wants to check (each Indian state's caste
    certificate format, each bank's statement layout, etc.) — the kind of library MiniAiLive's
    "8,000+ templates" and Doubango's "5,000+ formats" represent years of vendor data-collection
-   work behind. Realistic path: start with the 3–5 highest-volume document types Pramaan
+   work behind. Realistic path: start with the 3–5 highest-volume document types DocsGuard
    actually sees, hand-build reference templates for those, and grow the library over time — not
    a general-purpose solution to build in one pass.
 
 5. **PRNU sensor-noise fingerprinting — explicitly not recommended**, included here rather than
    in §4 for visibility: even setting aside that it needs a reference-image population per camera
-   and heavy denoising-filter computation, it is **the wrong tool for Pramaan's actual documents**
+   and heavy denoising-filter computation, it is **the wrong tool for DocsGuard's actual documents**
    — scanned, rephotographed, and repeatedly-recompressed (WhatsApp/email-forwarded) government
-   certificates destroy the PRNU signal well before Pramaan ever sees them. Do not add this to
+   certificates destroy the PRNU signal well before DocsGuard ever sees them. Do not add this to
    any roadmap; it would not deliver the signal the name promises for this use case.
 
 ---
 
 ## 7. Licensing summary — read before reusing anything from this research
 
-| Source | License status | Can Pramaan use/vendor the code? |
+| Source | License status | Can DocsGuard use/vendor the code? |
 |---|---|---|
 | MiniAiLive/ID-DocumentRecognition-Windows | No LICENSE file; explicitly commercial trial SDK | **No** |
 | amaljoseph/…YOLOv5-and-CycleGAN | No LICENSE file (no grant at all); YOLOv5 dependency is AGPL-3.0 | **No**, on two independent grounds |
@@ -422,7 +422,7 @@ near-term addition.
 | moov-io/watchman | Apache-2.0 | Yes, if ever adopted for sanctions-list breadth (attribution required) |
 | opensanctions/yente | MIT | Yes, if ever adopted for sanctions-list breadth |
 | camilooscargbaptista/cv-fraud-detection | MIT | Yes as a design reference; still Python, not a direct port |
-| Attestto-com/attestto-verify | Apache-2.0 | Yes as architectural reference (TS, PDF signature verification) — solves a different problem than Pramaan's |
+| Attestto-com/attestto-verify | Apache-2.0 | Yes as architectural reference (TS, PDF signature verification) — solves a different problem than DocsGuard's |
 | konstantint/PassportEye | MIT | Reference only (Python); reimplement the small checksum piece from the public ICAO spec directly |
 | Arg0s1080/mrz | GPL-3.0 | **Do not vendor/port** — copyleft; write an independent TS implementation from the public spec instead |
 | sivakumar-mahalingam/fastmrz | AGPL-3.0 | **Do not vendor/port** — strong copyleft |
@@ -431,9 +431,9 @@ near-term addition.
 
 **General rule applied throughout this document**: a permissive license (MIT/Apache-2.0/BSD) on
 a *reference* project means it's safe to read and learn the architecture from — it does not mean
-its code can be copy-pasted into Pramaan without checking the specific file's license header, and
+its code can be copy-pasted into DocsGuard without checking the specific file's license header, and
 in every case above the reference projects are in a different language/runtime (Python/Go) than
-Pramaan's TypeScript/Node stack anyway, so "port," not "copy," would be the operation — and for
+DocsGuard's TypeScript/Node stack anyway, so "port," not "copy," would be the operation — and for
 the GPL/AGPL and no-license projects, **not even that** — those need independent reimplementation
 from public specifications (ICAO 9303, PDF spec) or a paid commercial license, never a fork.
 
@@ -488,4 +488,4 @@ was used against the same search API instead. Also cited directly:
 
 **Font/glyph forensics and document-template matching**: [arxiv.org/pdf/1910.08993 — Identity Document and banknote security forensics: a survey](https://arxiv.org/pdf/1910.08993), [arxiv.org/pdf/1810.08016 — Optical Font Recognition in Smartphone-Captured Images, and its Applicability for ID Forgery Detection](https://arxiv.org/pdf/1810.08016), [arxiv.org/pdf/2607.01442 — From Forgeries to Foundation Models: A Systematic Survey of Identity Document Attack and Detection](https://arxiv.org/pdf/2607.01442), [ieeexplore.ieee.org/document/7333827 — A Conditional Random Field model for font forgery detection](https://ieeexplore.ieee.org/document/7333827/), [arxiv.org/pdf/2311.12663 — Similar Document Template Matching Algorithm](https://arxiv.org/pdf/2311.12663), [klearstack.com/blogs/template-based-ocr](https://klearstack.com/blogs/template-based-ocr).
 
-**Pramaan codebase (for accuracy of "current gaps" claims)**: `api/verification.ts` (deterministic checksum validators, Verhoeff/Aadhaar pattern), `api/_core.ts` (`imageForensics()` — single-pass `q=90` ELA + `jsQR`; `extractMetadata()` — `pdf-lib`/`exifr`), `api/sanctions.ts` (OFAC-SDN-only screening), `types.ts:33` (existing `box: [ymin,xmin,ymax,xmax]` evidence-region field already in the report schema, referenced in §4/§5 as the hook for region-specific ELA).
+**DocsGuard codebase (for accuracy of "current gaps" claims)**: `api/verification.ts` (deterministic checksum validators, Verhoeff/Aadhaar pattern), `api/_core.ts` (`imageForensics()` — single-pass `q=90` ELA + `jsQR`; `extractMetadata()` — `pdf-lib`/`exifr`), `api/sanctions.ts` (OFAC-SDN-only screening), `types.ts:33` (existing `box: [ymin,xmin,ymax,xmax]` evidence-region field already in the report schema, referenced in §4/§5 as the hook for region-specific ELA).

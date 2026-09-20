@@ -207,7 +207,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             <div className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center shadow-[0_6px_16px_-6px_rgba(37,99,235,0.55)]">
               <ShieldCheck className="w-5 h-5 text-white" strokeWidth={2.25} />
             </div>
-            <span className="font-display font-extrabold text-lg tracking-tight text-[#0F172A]">Pramaan</span>
+            <span className="font-display font-extrabold text-lg tracking-tight text-[#0F172A]">DocsGuard</span>
           </div>
           <motion.button
             onClick={onEnter}
@@ -253,7 +253,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             </motion.h1>
 
             <motion.p variants={fadeUp} className="mt-6 text-base sm:text-lg text-[#475569] leading-relaxed max-w-lg">
-              Upload any certificate, invoice, ID, or bank statement. Pramaan runs AI forensic
+              Upload any certificate, invoice, ID, or bank statement. DocsGuard runs AI forensic
               verification and cross-field analysis to tell you if it's real — with every red flag
               highlighted as evidence.
             </motion.p>
@@ -601,10 +601,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             <div className="w-7 h-7 rounded-lg bg-[#2563EB] flex items-center justify-center">
               <ShieldCheck className="w-4 h-4 text-white" strokeWidth={2.25} />
             </div>
-            <span className="font-display font-bold text-sm text-[#0F172A]">Pramaan</span>
+            <span className="font-display font-bold text-sm text-[#0F172A]">DocsGuard</span>
           </div>
           <p className="text-xs text-[#94A3B8] text-center sm:text-right">
-            Pramaan is an AI-assisted verification signal, not a substitute for official document authentication.
+            DocsGuard is an AI-assisted verification signal, not a substitute for official document authentication.
           </p>
         </div>
       </footer>

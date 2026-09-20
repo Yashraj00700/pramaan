@@ -1,4 +1,4 @@
-# Pramaan — Setup & Deploy
+# DocsGuard — Setup & Deploy
 
 ## What you need
 - Node.js 18+ (20/22 recommended)

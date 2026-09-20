@@ -1,4 +1,4 @@
-# Pramaan (प्रमाण) — Pitch Deck
+# DocsGuard — Pitch Deck
 
 **Upload any document. Know in seconds if it is real.**
 
@@ -8,14 +8,14 @@
 
 ## Slide 1 — Title
 
-**Pramaan — प्रमाण**
+**DocsGuard**
 *Upload any document. Know in seconds if it is real.*
 
 - AI-powered document-authenticity and fraud detection, built for a 2-hour hackathon
 - Hero use case: Madhya Pradesh government scheme documents
 - Universal underneath: any document, any domain
 
-**Visual:** Full-bleed dark slide, Pramaan wordmark in Devanagari + Latin, one hero screenshot of the app's verdict card (AUTHENTIC/SUSPICIOUS/LIKELY_FAKE badge) bottom-right, subtle document-scan-line animation motif.
+**Visual:** Full-bleed dark slide, DocsGuard wordmark in Devanagari + Latin, one hero screenshot of the app's verdict card (AUTHENTIC/SUSPICIOUS/LIKELY_FAKE badge) bottom-right, subtle document-scan-line animation motif.
 
 ---
 
@@ -47,7 +47,7 @@
 
 ## Slide 4 — The Solution
 
-**Pramaan: one upload, a structured verdict, in seconds.**
+**DocsGuard: one upload, a structured verdict, in seconds.**
 
 - Drop a document (image or PDF) — no signup, no document-type picker, no setup.
 - Get back: **AUTHENTIC / SUSPICIOUS / LIKELY_FAKE**, a 0–100 risk score, a plain-language summary, evidence-linked red flags, cross-field consistency checks, extracted fields, and — for images — bounding boxes drawn over the exact suspicious region.
@@ -89,7 +89,7 @@
 - That's a reasoning step over structured, extracted content — exactly what a vision-capable language model does well, and poorly-suited to hand-coded rules for every document type and every Indian state's certificate format.
 - We call **`claude-opus-5`** (Anthropic's current-generation Opus model, released July 2026) with a **forced structured-output tool call**, so every response is guaranteed-valid JSON matching our `AnalysisReport` schema — no free-text parsing, no schema drift, no hallucinated fields.⁶
 
-**Visual:** Side-by-side comparison table — "OCR tool" / "ELA forensics tool" / "Pramaan (Claude + deterministic)" — rows: reads text, detects pixel edits, cross-field logic, structured guaranteed output, honest about limits. Only the Pramaan column has all checkmarks.
+**Visual:** Side-by-side comparison table — "OCR tool" / "ELA forensics tool" / "DocsGuard (Claude + deterministic)" — rows: reads text, detects pixel edits, cross-field logic, structured guaranteed output, honest about limits. Only the DocsGuard column has all checkmarks.
 
 ---
 
@@ -104,7 +104,7 @@
 - **Rentals/marketplaces:** ID and ownership-proof checks between individuals.
 - The `AnalysisReport` schema and pipeline are identical across every one of these — the document type is *detected*, not hard-coded per use case.
 
-**Visual:** A hub-and-spoke diagram — Pramaan logo in the center, six spokes to icons for Government, Banking/KYC, Trade/Tenders, HR/Education, Rentals/Marketplace, "+ anywhere trust is established by document."
+**Visual:** A hub-and-spoke diagram — DocsGuard logo in the center, six spokes to icons for Government, Banking/KYC, Trade/Tenders, HR/Education, Rentals/Marketplace, "+ anywhere trust is established by document."
 
 ---
 
@@ -126,9 +126,9 @@
 
 **What this is worth if it ships beyond the hackathon.**
 
-- Every one of the fraud cases on Slide 3 involved a **document that a human was trusted to eyeball and approve**. Pramaan doesn't replace that human — it gives them, in seconds, the evidence a trained forensic examiner would take hours to produce.
+- Every one of the fraud cases on Slide 3 involved a **document that a human was trusted to eyeball and approve**. DocsGuard doesn't replace that human — it gives them, in seconds, the evidence a trained forensic examiner would take hours to produce.
 - At MP's scheme volume (a single block office can process thousands of applications per cycle), even a small reduction in fraudulent approvals reaching disbursement protects both the exchequer and the genuine beneficiaries whose slot a fraudulent claim displaces.
-- **The ask:** a pilot with one MP district scheme desk or one tender-verification cell — real applications, real documents, Pramaan running alongside the existing manual process for a scheme cycle, measured against manual-only outcomes.
+- **The ask:** a pilot with one MP district scheme desk or one tender-verification cell — real applications, real documents, DocsGuard running alongside the existing manual process for a scheme cycle, measured against manual-only outcomes.
 
 **Visual:** One large stat callout — "Built and demoed end-to-end in 2 hours. No mocked data." — with a secondary line: "Ask: one district, one scheme cycle, real documents."
 
@@ -146,7 +146,7 @@
 
 ## Slide 12 — Close
 
-**Pramaan — प्रमाण. Proof, in seconds, that doesn't lie about what it knows.**
+**DocsGuard. Proof, in seconds, that doesn't lie about what it knows.**
 
 - Starts with MP government certificates because that's where the fraud is highest-stakes and highest-volume.
 - The same upload → extract → cross-check → verdict pipeline works for any document, anywhere trust is established on paper.
