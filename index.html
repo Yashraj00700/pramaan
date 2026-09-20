@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Pramaan — AI document authenticity & fraud detection. Upload any document and know in seconds if it's real." />
+    <meta name="theme-color" content="#2563EB" />
+    <title>Pramaan — AI Document Authenticity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --blue: #2563eb;        /* primary */
+        --blue-deep: #1e40af;   /* headings / logo accent */
+        --blue-bright: #3b82f6; /* secondary */
+        --blue-50: #eff6ff;     /* tint fill */
+        --blue-100: #dbeafe;
+        --wash: #f5f8ff;        /* section wash */
+        --ink: #0f172a;         /* headings */
+        --body: #475569;        /* body text */
+        --muted: #94a3b8;
+        --line: #e2e8f0;        /* hairline */
+        --ok: #10b981;
+        --warn: #f59e0b;
+        --bad: #ef4444;
+      }
+      html, body {
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        background-color: #ffffff;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      /* Distinctive geometric display face for headings/hero. Use class="font-display". */
+      .font-display {
+        font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+        letter-spacing: -0.02em;
+      }
+      /* Soft dotted texture helper for hero/section backgrounds. */
+      .dotgrid {
+        background-image: radial-gradient(circle at 1px 1px, rgba(37, 99, 235, 0.10) 1px, transparent 0);
+        background-size: 22px 22px;
+      }
+      /* Gentle float loops for 3D motifs. */
+      @keyframes floaty { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-12px) rotate(3deg); } }
+      .animate-floaty { animation: floaty 7s ease-in-out infinite; }
+      @keyframes floaty-slow { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+      .animate-floaty-slow { animation: floaty-slow 9s ease-in-out infinite; }
+      /* Soft pulsing glow behind the hero crystal. */
+      @keyframes glow { 0%,100% { opacity: .5; transform: scale(1); } 50% { opacity: .9; transform: scale(1.08); } }
+      .animate-glow { animation: glow 5s ease-in-out infinite; }
+      /* Scroll-reveal (IntersectionObserver adds .is-visible). */
+      .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1); }
+      .reveal.is-visible { opacity: 1; transform: none; }
+
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-track { background: #f1f5f9; }
+      ::-webkit-scrollbar-thumb { background: #c7d2e5; border-radius: 6px; }
+      ::-webkit-scrollbar-thumb:hover { background: #a9b8d4; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .animate-floaty, .animate-floaty-slow, .animate-glow { animation: none; }
+        .reveal { transition: none; opacity: 1; transform: none; }
+      }
+      @media print {
+        body { background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .no-print { display: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
