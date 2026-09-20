@@ -629,10 +629,17 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
   // pixels than the model needs to read fields and spot typography defects, and
   // image size is a direct latency cost on every request.
   let sendB64 = input.fileBase64;
+  // The downscale below re-encodes to JPEG, so the declared media type MUST follow
+  // the bytes. Declaring image/png while sending JPEG bytes is a hard 400 from the
+  // API ("the image appears to be a image/jpeg image") and killed every PNG upload.
+  let sendMediaType = input.mediaType;
   if ((input.mediaType || '').startsWith('image/')) {
     try {
       const small = await sharp(buf).rotate().resize({ width: 1100, height: 1100, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
-      if (small.length < buf.length) sendB64 = small.toString('base64');
+      if (small.length < buf.length) {
+        sendB64 = small.toString('base64');
+        sendMediaType = 'image/jpeg';
+      }
     } catch { /* fall back to the original */ }
   }
   if ((input.mediaType || '').startsWith('image/')) await assertAnalysableImage(buf);
@@ -649,8 +656,8 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
   // Two payloads: the full evidence set (document + ELA heatmap) for the forensic
   // pass, and a lighter document-only payload for the module/court passes. Sending
   // every image to all four passes was doubling the upload cost of every scan.
-  const docOnlyContent: any[] = [contentBlock(input.mediaType, sendB64)];
-  const userContent: any[] = [contentBlock(input.mediaType, sendB64)];
+  const docOnlyContent: any[] = [contentBlock(sendMediaType, sendB64)];
+  const userContent: any[] = [contentBlock(sendMediaType, sendB64)];
   for (const img of extraImages) {
     userContent.push({ type: 'text', text: img.caption });
     userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } });
