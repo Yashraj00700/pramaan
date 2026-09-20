@@ -1,4 +1,5 @@
 import type { AnalysisReport } from "../types";
+import { DEMO_REPORTS } from "./demoReport";
 
 /**
  * Converts a File into a base64 string with the "data:...;base64," prefix stripped.
@@ -52,4 +53,15 @@ export async function analyzeDocument(file: File): Promise<AnalysisReport> {
   }
 
   return json.report as AnalysisReport;
+}
+
+/**
+ * Loads a pre-built, fully-populated FICTIONAL sample report for demo purposes
+ * (e.g. when no ANTHROPIC_API_KEY is configured, so the live pipeline cannot
+ * run). Adds a short artificial delay so the existing scanning animation in
+ * FileUpload still plays, matching the feel of a real analysis.
+ */
+export async function loadDemoReport(kind: "genuine" | "tampered"): Promise<AnalysisReport> {
+  await new Promise((resolve) => setTimeout(resolve, 1400));
+  return DEMO_REPORTS[kind];
 }

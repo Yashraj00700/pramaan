@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AnalysisReport, ScanRecord } from './types';
-import { analyzeDocument, fileToDataUrl } from './services/analysisService';
+import { analyzeDocument, fileToDataUrl, loadDemoReport } from './services/analysisService';
 import { HistoryService } from './services/historyService';
 import LandingPage from './components/LandingPage';
 import FileUpload from './components/FileUpload';
@@ -17,7 +17,22 @@ import {
   X,
   Menu,
   Lock,
+  Sparkles,
+  ShieldCheck,
+  ShieldAlert,
+  ArrowUpRight,
 } from 'lucide-react';
+
+// Friendly, safe fallback messages emitted by api/_validate.ts's toUserMessage()
+// whenever the analysis engine can't be reached because the server has no
+// ANTHROPIC_API_KEY configured (an unrecognized/plain Error) or is otherwise
+// misconfigured (401/403 upstream). The server deliberately never echoes the
+// real cause to the client, so we match on these known, stable strings to
+// decide when to point the user at the sample reports instead of a raw error.
+const UNCONFIGURED_SERVER_MESSAGES = [
+  'Analysis failed. Please try again. If the problem persists, contact support.',
+  'The server is not configured correctly (authentication problem with the analysis provider). Please contact the administrator.',
+];
 
 type View = 'landing' | 'app';
 type InnerState = 'idle' | 'result';
@@ -134,7 +149,42 @@ const App: React.FC = () => {
       setCurrent(rec);
       setInner('result');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong while analyzing this document. Please try again.');
+      const rawMessage = e instanceof Error ? e.message : 'Something went wrong while analyzing this document. Please try again.';
+      const looksUnconfigured = UNCONFIGURED_SERVER_MESSAGES.some((m) => rawMessage.includes(m));
+      setError(
+        looksUnconfigured
+          ? "The live analysis engine isn't reachable right now — this usually means the server's analysis key isn't configured yet. While that's being sorted out, try one of the sample reports below to see a full Pramaan forensic dossier."
+          : rawMessage
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const DEMO_META: Record<'genuine' | 'tampered', { fileName: string; thumbnail: string }> = {
+    genuine: { fileName: 'SAMPLE — genuine-income-certificate.jpg', thumbnail: '/samples/genuine-income-certificate.jpg' },
+    tampered: { fileName: 'SAMPLE — tampered-income-certificate.jpg', thumbnail: '/samples/tampered-income-certificate.jpg' },
+  };
+
+  /** Loads one of the two built-in, fully-populated FICTIONAL sample reports — no API key required. */
+  const handleLoadDemo = async (kind: 'genuine' | 'tampered') => {
+    setError(null);
+    setIsAnalyzing(true);
+    try {
+      const report: AnalysisReport = await loadDemoReport(kind);
+      const meta = DEMO_META[kind];
+      const rec: ScanRecord = {
+        id: 'DEMO-' + kind.toUpperCase() + '-' + Date.now(),
+        createdAt: Date.now(),
+        fileName: meta.fileName,
+        mediaType: 'image/jpeg',
+        thumbnail: meta.thumbnail,
+        report,
+      };
+      HistoryService.save(rec);
+      refreshHistory();
+      setCurrent(rec);
+      setInner('result');
     } finally {
       setIsAnalyzing(false);
     }
@@ -263,6 +313,17 @@ const App: React.FC = () => {
         <AnimatePresence mode="wait" initial={false}>
           {inner === 'result' && current ? (
             <motion.div key="result" {...viewTransition}>
+              {current.id.startsWith('DEMO-') && (
+                <div className="no-print mb-4 flex flex-wrap items-center gap-2.5 rounded-2xl border border-[#DBEAFE] bg-[#EFF6FF] px-4 py-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#2563EB] text-white text-[11px] font-bold uppercase tracking-[0.08em] px-3 py-1 shrink-0">
+                    <Sparkles className="w-3 h-3" aria-hidden="true" />
+                    Sample report
+                  </span>
+                  <p className="text-xs text-[#1E40AF] leading-relaxed">
+                    This is a fictional, pre-built demo dossier — not a live scan of an uploaded document.
+                  </p>
+                </div>
+              )}
               <ResultView record={current} onNewScan={startNewScan} onBack={() => setInner('idle')} />
             </motion.div>
           ) : (
@@ -314,6 +375,56 @@ const App: React.FC = () => {
                     <div className="relative mt-6 flex items-center justify-center gap-1.5 text-xs text-[#475569]">
                       <Lock className="w-3.5 h-3.5 text-[#2563EB]" aria-hidden="true" />
                       <span>Your document is analyzed securely and never stored on our servers.</span>
+                    </div>
+
+                    {/* Sample reports — no upload or API key required, useful for a quick demo. */}
+                    <div className="relative mt-8 pt-7 border-t border-[#E2E8F0]">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className="w-4 h-4 text-[#2563EB]" aria-hidden="true" />
+                        <h2 className="font-display text-sm font-bold text-[#0F172A]">See a sample report</h2>
+                      </div>
+                      <p className="text-xs text-[#475569] mb-4 max-w-xl">
+                        No file handy? Load a full, fictional Pramaan dossier instantly — one clean certificate, one
+                        forged one — to see every section of the report.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <motion.button
+                          type="button"
+                          disabled={isAnalyzing}
+                          whileHover={isAnalyzing ? undefined : { y: -2 }}
+                          whileTap={isAnalyzing ? undefined : { y: 0 }}
+                          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                          onClick={() => handleLoadDemo('genuine')}
+                          className="flex items-center gap-3 text-left rounded-xl border border-[#E2E8F0] bg-white hover:border-[#10B981]/50 hover:bg-[#ECFDF5]/40 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-3.5 cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
+                        >
+                          <span className="inline-flex w-9 h-9 shrink-0 items-center justify-center rounded-lg bg-[#ECFDF5] text-[#10B981]">
+                            <ShieldCheck className="w-4.5 h-4.5" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-[#0F172A]">Genuine certificate</span>
+                            <span className="block text-xs text-[#475569] mt-0.5">Clean pass — AUTHENTIC verdict</span>
+                          </span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-[#94A3B8] ml-auto shrink-0" aria-hidden="true" />
+                        </motion.button>
+                        <motion.button
+                          type="button"
+                          disabled={isAnalyzing}
+                          whileHover={isAnalyzing ? undefined : { y: -2 }}
+                          whileTap={isAnalyzing ? undefined : { y: 0 }}
+                          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                          onClick={() => handleLoadDemo('tampered')}
+                          className="flex items-center gap-3 text-left rounded-xl border border-[#E2E8F0] bg-white hover:border-[#EF4444]/50 hover:bg-[#FEF2F2]/40 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-3.5 cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
+                        >
+                          <span className="inline-flex w-9 h-9 shrink-0 items-center justify-center rounded-lg bg-[#FEF2F2] text-[#EF4444]">
+                            <ShieldAlert className="w-4.5 h-4.5" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-[#0F172A]">Tampered certificate</span>
+                            <span className="block text-xs text-[#475569] mt-0.5">Forged income figure — LIKELY_FAKE verdict</span>
+                          </span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-[#94A3B8] ml-auto shrink-0" aria-hidden="true" />
+                        </motion.button>
+                      </div>
                     </div>
                   </div>
                 </section>

@@ -1,3 +1,4 @@
+import DossierSections from './DossierSections';
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, MotionConfig, animate, useReducedMotion } from 'framer-motion';
 import {
@@ -619,6 +620,9 @@ const ResultView: React.FC<ResultViewProps> = ({ record, onNewScan, onBack }) =>
               </div>
             </motion.div>
           </AnimatePresence>
+
+          {/* Deep forensic dossier: modules, adversarial court, risk, timeline, ELA */}
+          <DossierSections report={report} originalImage={record.thumbnail} />
         </div>
       </div>
     </MotionConfig>
