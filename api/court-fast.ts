@@ -95,7 +95,7 @@ export async function runCourt(opts: {
     const { client, model, userContent, baseReport, bindingFacts } = opts;
     const res = await client.messages.create({
       model,
-      max_tokens: 5000,
+      max_tokens: 9000,
       thinking: { type: 'adaptive' },
       output_config: { effort: opts.effort || 'low' },
       system: SYSTEM,
@@ -122,7 +122,16 @@ export async function runCourt(opts: {
 
     const block: any = (res.content as any[]).find((b) => b.type === 'tool_use' && b.name === 'submit_proceedings');
     const out: any = block?.input;
-    if (!out?.ruling) return null;
+    if (!out?.ruling) {
+      // Never fail silently again: a missing tool call is almost always the token
+      // budget being consumed by reasoning before the tool block is emitted.
+      console.error('court: no ruling returned', {
+        stop_reason: (res as any)?.stop_reason,
+        blocks: ((res.content as any[]) || []).map((b) => b.type),
+        usage: (res as any)?.usage,
+      });
+      return null;
+    }
     out.prosecution = { position: 'PROSECUTION', ...(out.prosecution || {}) };
     out.defense = { position: 'DEFENSE', ...(out.defense || {}) };
     return out as CourtProceedings;

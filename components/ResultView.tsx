@@ -1,4 +1,5 @@
 import DossierSections from './DossierSections';
+import ExportDossier from './ExportDossier';
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, MotionConfig, animate, useReducedMotion } from 'framer-motion';
 import {
@@ -623,6 +624,11 @@ const ResultView: React.FC<ResultViewProps> = ({ record, onNewScan, onBack }) =>
 
           {/* Deep forensic dossier: modules, adversarial court, risk, timeline, ELA */}
           <DossierSections report={report} originalImage={record.thumbnail} />
+
+          {/* Print-only paginated dossier: hidden on screen, this is what Print produces. */}
+          <div className="hidden print:block">
+            <ExportDossier record={record} />
+          </div>
         </div>
       </div>
     </MotionConfig>

@@ -1,18 +1,33 @@
 <p align="center">
-  <img src="docs/assets/pramaan-banner.svg" alt="DocsGuard — AI Document Authenticity & Fraud Detection" width="100%" />
+  <img src="docs/assets/docsguard-mark.svg" alt="DocsGuard" width="92" />
 </p>
 
 <h1 align="center">DocsGuard</h1>
 <p align="center"><b>Upload any document. Know in seconds if it's real.</b><br/>
-An AI document-authenticity & fraud-detection app — built for government schemes, and for everyone.</p>
+AI document-authenticity &amp; fraud detection — deterministic forensics, Claude reasoning, and an adversarial review.</p>
 
 <p align="center">
   <img alt="React" src="https://img.shields.io/badge/React-19-2563EB?logo=react&logoColor=white">
   <img alt="Vite" src="https://img.shields.io/badge/Vite-6-1E40AF?logo=vite&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white">
   <img alt="Claude" src="https://img.shields.io/badge/Claude-Opus%205-D97757">
+  <img alt="tests" src="https://img.shields.io/badge/validator%20tests-60%2F60-10B981">
   <img alt="Vercel" src="https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white">
 </p>
+
+## Demo
+
+<p align="center">
+  <img src="docs/assets/demo-preview.gif" alt="DocsGuard catching a tampered certificate" width="100%" />
+</p>
+
+<p align="center">
+  <b><a href="docs/assets/DocsGuard-Demo.mp4">▶ Watch the full demo (71s)</a></b> &nbsp;·&nbsp;
+  <a href="docs/DocsGuard-Deck.pdf">Pitch deck (16 slides)</a> &nbsp;·&nbsp;
+  <a href="docs/DocsGuard-Explainer.pdf">Detailed explainer</a>
+</p>
+
+<p align="center"><i>A genuine certificate scores risk 2/100. The tampered copy is caught at 73 — with the evidence shown.</i></p>
 
 ---
 
@@ -57,24 +72,63 @@ DocsGuard is built to be **trustworthy enough for a government officer**:
 
 ## How it works
 
-```
-Upload  →  Deterministic extraction (hash · PDF/EXIF metadata)  →  Claude Opus 5
-        →  visual forensics + OCR + cross-field logic (+ web search)  →  Verdict + evidence
-```
+Deterministic facts first. The AI is not allowed to argue with them.
 
 ```mermaid
-flowchart LR
-  A[Browser upload] --> B["/api/analyze (Vercel serverless)"]
-  B --> C["Deterministic signals<br/>SHA-256 · pdf-lib · exifr"]
-  B --> D["Claude Opus 5<br/>vision + cross-field logic<br/>+ web_search"]
-  C --> D
-  D --> E["Structured AnalysisReport"]
-  E --> F["Verdict · red flags · consistency<br/>· highlighted evidence"]
+flowchart TD
+  U[Upload image or PDF] --> D["Deterministic layer (in code)<br/>SHA-256 · PDF producer + created vs modified<br/>EXIF editor tags · ELA heatmap · QR decode"]
+  D --> A["PASS A — Claude<br/>verdict · risk · fields · consistency checks"]
+  A --> B["PASS B<br/>modules 1-6"]
+  A --> C["PASS C<br/>modules 7-12"]
+  A --> X["PASS D — adversarial court<br/>prosecution vs defence vs judge"]
+  B --> M[Merged 12-module dossier]
+  C --> M
+  X --> M
+  M --> O["BINDING OVERRIDE (applied last)<br/>Aadhaar · PAN · GSTIN · IFSC · IBAN · MRZ checksums"]
+  O --> R[Verdict + evidence + what it could NOT verify]
 ```
 
-The Claude API key lives **only** on the server (Vercel function / local dev middleware) — it is
-never shipped to the browser. Documents are analyzed in-flight and not stored on any server
-(history is kept locally in your browser).
+Passes B, C and D run **concurrently**. The checksum layer is applied **last** and outranks the model:
+a number that fails its official checksum could not have been issued, so no argument can talk the
+verdict back down.
+
+## The adversarial court
+
+A single AI pass either cries fraud at every compression artifact, or waves everything through. So the
+review argues with itself:
+
+| Role | Job |
+|---|---|
+| **Prosecution** | Strongest honest case that the document is forged — observable evidence only |
+| **Defence** | The innocent explanation: scanner artifacts, recompression, a legitimate re-save |
+| **Judge** | Weighs both against the binding computed facts; records what was **decisive** and what it **dismissed** |
+
+That *dismissed* list is the false-positive guard, and the officer sees it.
+
+## Proof
+
+Measured, not claimed — reproduce these yourself:
+
+| Claim | Command | Result |
+|---|---|---|
+| Identifier validation is real mathematics | `node --test api/verification.test.mjs` | **60/60 pass** — Verhoeff, PAN, GSTIN mod-36, IFSC, IBAN mod-97, ICAO 9303 MRZ |
+| Forensic pipeline runs with no API key | `npm run selftest` | **5/5 pass** |
+| ELA reacts to real pixel edits | included in selftest | mean error **0.196 → 0.264** on a spliced edit |
+| It catches a real forgery end-to-end | upload `samples/tampered-income-certificate.jpg` | **LIKELY_FAKE**, risk 88, 12/12 modules |
+
+Regenerate the specimen pair any time with `npm run samples`.
+
+## Honest limitations
+
+- **ELA is weak on flat, vector-rendered documents.** It was built for photographs; on a crisp
+  certificate, ordinary body text produces as much error as a splice. Reported as one weak indicative
+  signal, never as a verdict.
+- **No source-of-truth verification yet.** Until DigiLocker / e-District integration, DocsGuard can say a
+  certificate is internally consistent and structurally valid — not that the office actually issued it.
+- **Confidence is self-reported** by the model, not calibrated against a labelled dataset.
+- Signature/seal verification and copy-move detection need a separate Python/ONNX service. The public
+  reference SDKs are `license: null` or AGPL and cannot be vendored — see
+  [COMPETITIVE_RESEARCH.md](docs/COMPETITIVE_RESEARCH.md).
 
 ## Tech stack
 

@@ -1,177 +1,365 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>Pramaan Deck</title>
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>DocsGuard Deck</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 @page{size:338.7mm 190.5mm;margin:0}
 *{box-sizing:border-box}
 body{margin:0;font-family:'Plus Jakarta Sans',sans-serif;color:#0F172A}
-.s{width:338.7mm;height:190.5mm;padding:16mm 18mm;page-break-after:always;position:relative;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.s{width:338.7mm;height:190.5mm;padding:14mm 17mm;page-break-after:always;position:relative;overflow:hidden;background:#fff;display:flex;flex-direction:column}
 .s:last-child{page-break-after:auto}
-h1,h2,.d{font-family:'Outfit';letter-spacing:-.025em}
-h2{font-size:30pt;font-weight:800;margin:0 0 5mm;line-height:1.05}
-.eyebrow{font-size:9pt;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#2563EB;margin-bottom:3mm}
-p{font-size:12pt;line-height:1.5;margin:0 0 3mm;color:#334155}
-.lead{font-size:14pt;color:#1E293B}
-.num{position:absolute;bottom:8mm;right:14mm;font-size:9pt;color:#94A3B8}
-.brand{position:absolute;bottom:8mm;left:18mm;font-size:9pt;color:#94A3B8;font-weight:600}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm}
-.card{border:1px solid #E2E8F0;border-radius:12px;padding:5mm 6mm;background:#fff}
+h1,h2,h3,.d{font-family:'Outfit';letter-spacing:-.025em}
+h2{font-size:26pt;font-weight:800;margin:0 0 4mm;line-height:1.06;color:#0F172A}
+h3{font-size:12.5pt;font-weight:700;margin:0 0 1.5mm;color:#0F172A}
+.eyebrow{font-size:8.5pt;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#2563EB;margin-bottom:2.5mm}
+p{font-size:10.5pt;line-height:1.45;margin:0 0 2.5mm;color:#334155}
+.lead{font-size:12.5pt;color:#1E293B}
+.small{font-size:9pt;color:#475569;line-height:1.4}
+.num{position:absolute;bottom:7mm;right:13mm;font-size:8pt;color:#94A3B8;font-family:'Outfit'}
+.brand{position:absolute;bottom:7mm;left:17mm;font-size:8pt;color:#94A3B8;font-weight:700;font-family:'Outfit';letter-spacing:.04em}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4.5mm}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:3.5mm}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:3mm}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:3mm}
+.card{border:1px solid #E2E8F0;border-radius:11px;padding:4mm 5mm;background:#fff}
 .tint{background:#F5F8FF;border-color:#DBEAFE}
-.stat .n{font-family:'Outfit';font-size:26pt;font-weight:900;color:#1E40AF;line-height:1}
-.stat .l{font-size:9.5pt;color:#475569;margin-top:2mm;line-height:1.35}
-ul{margin:0;padding-left:6mm}li{font-size:12pt;margin-bottom:2.5mm;color:#334155;line-height:1.45}
-.big{font-size:52pt;font-weight:900;line-height:1.02}
-table{width:100%;border-collapse:collapse;font-size:10.5pt}
-th,td{text-align:left;padding:2.6mm 2mm;border-bottom:1px solid #E2E8F0}
-th{font-size:8.5pt;text-transform:uppercase;letter-spacing:.1em;color:#64748B}
-.pill{display:inline-block;font-size:9pt;font-weight:700;padding:1mm 3mm;border-radius:999px;border:1px solid}
+.stat .n{font-family:'Outfit';font-size:21pt;font-weight:900;color:#1E40AF;line-height:1}
+.stat .l{font-size:8pt;color:#475569;margin-top:1.6mm;line-height:1.3}
+.stat .src{font-size:6.6pt;color:#94A3B8;margin-top:1.3mm;display:block}
+ul{margin:0;padding-left:5mm}li{font-size:10.3pt;margin-bottom:2mm;color:#334155;line-height:1.4}
+.big{font-size:46pt;font-weight:900;line-height:1.02}
+table{width:100%;border-collapse:collapse;font-size:9.3pt}
+th,td{text-align:left;padding:2.2mm 2mm;border-bottom:1px solid #E2E8F0;vertical-align:top}
+th{font-size:7.6pt;text-transform:uppercase;letter-spacing:.09em;color:#64748B;font-weight:700}
+.pill{display:inline-block;font-size:8pt;font-weight:700;padding:.9mm 2.6mm;border-radius:999px;border:1px solid;white-space:nowrap}
 .r{background:#FEF2F2;border-color:#FECACA;color:#B91C1C}
 .a{background:#FFFBEB;border-color:#FDE68A;color:#B45309}
 .g{background:#ECFDF5;border-color:#A7F3D0;color:#047857}
+.b{background:#EFF6FF;border-color:#DBEAFE;color:#1E40AF}
 .mono{font-family:ui-monospace,Menlo,monospace}
+.src{font-size:7pt;color:#94A3B8}
 .hero{background:linear-gradient(135deg,#0F172A,#1E3A8A);color:#fff}
 .hero h1,.hero p{color:#fff}
+.hero .brand,.hero .num{color:rgba(255,255,255,.55)}
+.stage{border:1.4px solid #E2E8F0;border-radius:10px;background:#fff;padding:3mm 3.5mm}
+.stage .k{font-size:7pt;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94A3B8}
+.stage .t{font-size:10pt;font-weight:800;font-family:'Outfit';color:#0F172A;margin:.8mm 0 1.2mm}
+.stage li{font-size:8pt;margin-bottom:.8mm;line-height:1.3}
+.sec-hd{display:flex;align-items:baseline;justify-content:space-between;gap:6mm}
+.lim{border-left:3px solid #EF4444;background:#FEF2F2;border-radius:0 11px 11px 0;padding:3.5mm 5mm}
+.lim.warn{border-left-color:#F59E0B;background:#FFFBEB}
+.two{flex:1;display:flex;gap:6mm;min-height:0}
+.col{flex:1;display:flex;flex-direction:column;min-height:0}
 </style></head><body>
 
-<section class="s hero" style="justify-content:center">
-  <svg width="74" height="74" viewBox="0 0 64 64" fill="none"><path d="M32 5l20 8v15c0 12-8.4 21.2-20 26C20.4 49.2 12 40 12 28V13l20-8z" fill="#fff"/><path d="M24 31.5l6 6 12-13" stroke="#1E3A8A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <h1 class="d big" style="margin:7mm 0 3mm">Pramaan</h1>
-  <p style="font-size:19pt;font-weight:700;opacity:.95;margin-bottom:4mm">Proving a document is real — in seconds.</p>
-  <p style="font-size:13pt;opacity:.82;max-width:190mm">AI document-authenticity and fraud detection for government schemes.
-  Mathematics decides what mathematics can decide — and the system says plainly what it could not verify.</p>
+<section class="s hero" style="justify-content:center;align-items:flex-start">
+  <svg width="66" height="66" viewBox="0 0 64 64" fill="none"><path d="M32 5l20 8v15c0 12-8.4 21.2-20 26C20.4 49.2 12 40 12 28V13l20-8z" fill="#fff"/><path d="M24 31.5l6 6 12-13" stroke="#1E3A8A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <h1 class="d big" style="margin:6mm 0 3mm">DocsGuard</h1>
+  <p style="font-size:17pt;font-weight:700;opacity:.95;margin-bottom:4mm">AI document authenticity &amp; fraud detection — for government schemes, first.</p>
+  <p style="font-size:11.5pt;opacity:.82;max-width:205mm">Upload a document. Deterministic mathematics checks what mathematics can check. Claude reasons over
+  what's left. An adversarial court stress-tests the verdict. And the system says plainly, every time, what it could not verify.</p>
+  <div class="g4" style="margin-top:10mm;width:100%;max-width:250mm">
+    <div class="card" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)"><div class="stat"><div class="n" style="color:#fff">60/60</div><div class="l" style="color:rgba(255,255,255,.75)">deterministic identifier tests pass</div></div></div>
+    <div class="card" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)"><div class="stat"><div class="n" style="color:#fff">5/5</div><div class="l" style="color:rgba(255,255,255,.75)">self-test checks, zero API key</div></div></div>
+    <div class="card" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)"><div class="stat"><div class="n" style="color:#fff">12</div><div class="l" style="color:rgba(255,255,255,.75)">forensic dossier modules per scan</div></div></div>
+    <div class="card" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)"><div class="stat"><div class="n" style="color:#fff">₹3.48L cr</div><div class="l" style="color:rgba(255,255,255,.75)">DBT leakage removed nationally*</div></div></div>
+  </div>
+  <p class="small" style="opacity:.6;margin-top:3mm">*identity dedup, not document forensics — see slide 3</p>
+  <div class="brand">DocsGuard</div><div class="num">1</div>
 </section>
 
 <section class="s">
   <div class="eyebrow">The problem</div>
   <h2>Aadhaar proves who you are.<br/>It does not prove what your paper says.</h2>
-  <p class="lead" style="max-width:250mm">Most welfare fraud in India is not a stolen identity. It is a real, correctly-authenticated
-  person submitting a document that says something untrue about them.</p>
-  <div class="g3" style="margin-top:6mm">
-    <div class="card"><strong>Income certificate</strong><p style="font-size:10.5pt;margin-top:2mm">says ₹96,500 — the bank statement says otherwise</p></div>
-    <div class="card"><strong>Caste / domicile certificate</strong><p style="font-size:10.5pt;margin-top:2mm">carries a seal the issuing officer never applied</p></div>
-    <div class="card"><strong>Bank guarantee</strong><p style="font-size:10.5pt;margin-top:2mm">backs a tender, and the bank has never heard of it</p></div>
+  <p class="lead" style="max-width:250mm">Most document fraud reaching Indian welfare, scholarship, and tender flows is not a stolen
+  identity. It is a real, correctly-authenticated person submitting a document that says something untrue about them —
+  or a document nobody real ever issued.</p>
+  <div class="g3" style="margin-top:5mm">
+    <div class="card"><h3>Income certificate</h3><p class="small">A figure retyped over a genuine scan drops declared income under the EWS ₹8L/year threshold, or a scheme's own limit — the certificate itself can be a clean re-scan with the edit invisible at a glance.</p></div>
+    <div class="card"><h3>Caste / domicile certificate</h3><p class="small">Recreated from scratch on a word processor, or a real certificate with the category or issuing tehsil altered — MP's own layouts are simple and publicly visible to copy.</p></div>
+    <div class="card"><h3>Tender bank guarantee</h3><p class="small">A forger impersonates the issuing bank via a lookalike email domain to "confirm" a fabricated guarantee when the tender authority calls to verify it — the single highest-value forgery pattern in Indian procurement.</p></div>
   </div>
-  <p style="margin-top:6mm"><strong>Checked how?</strong> One clerk, hundreds of applications, no forensic tooling, no time.
-  A competent forgery passes. An honest applicant with an odd-looking document gets rejected. Both failures are invisible.</p>
-  <div class="brand">Pramaan</div><div class="num">2</div>
+  <div class="card tint" style="margin-top:5mm"><strong>Checked how, today?</strong> One clerk, hundreds of applications, seconds per file, no forensic
+  tooling. A competent forgery passes. An honest applicant whose scan just looks unusual gets rejected. Both failures are invisible
+  until an audit finds them years later. <span class="src">Source: docs/FRAUD_TYPOLOGIES.md §1, §6</span></div>
+  <div class="brand">DocsGuard</div><div class="num">2</div>
 </section>
 
 <section class="s">
-  <div class="eyebrow">The scale — government's own numbers</div>
-  <h2>Leakage is measured, acknowledged, funded against</h2>
-  <div class="g4" style="margin-bottom:5mm">
-    <div class="card stat"><div class="n">₹3.48L cr</div><div class="l">cumulative DBT savings from removing leakage</div></div>
-    <div class="card stat"><div class="n">5.2 cr</div><div class="l">fake ration cards purged</div></div>
-    <div class="card stat"><div class="n">830/1,572</div><div class="l">minority institutions found fake or inactive</div></div>
-    <div class="card stat"><div class="n">₹202 cr</div><div class="l">MP Jal Nigam fake bank-guarantee case</div></div>
+  <div class="eyebrow">Why identity verification isn't enough</div>
+  <h2>Aadhaar/DBT solved a different problem — and solved it at national scale</h2>
+  <div class="two">
+    <div class="col">
+      <p class="small" style="margin-bottom:3mm">The Direct Benefit Transfer programme is India's flagship anti-leakage system. It works by
+      <strong>identity deduplication</strong> — proving a beneficiary is a real, unique person and removing ghosts and duplicates.
+      It was never designed to check whether an uploaded certificate's claims are true.</p>
+      <div class="g2" style="gap:3mm">
+        <div class="card stat"><div class="n">5.2 cr</div><div class="l">fake ration cards purged nationally</div><span class="src">IMPACT.md §1 / DBT Bharat</span></div>
+        <div class="card stat"><div class="n">4.1 cr</div><div class="l">duplicate LPG connections removed</div><span class="src">IMPACT.md §1 / DBT Bharat</span></div>
+        <div class="card stat"><div class="n">2.1+ cr</div><div class="l">ineligible beneficiaries de-listed</div><span class="src">IMPACT.md §1 / DBT Bharat</span></div>
+        <div class="card stat"><div class="n">1.5bn+</div><div class="l">non-unique DBT transactions / year, 320+ schemes</div><span class="src">IMPACT.md §1</span></div>
+      </div>
+    </div>
+    <div class="col">
+      <h3 style="margin-top:0">What identity dedup cannot catch</h3>
+      <ul style="font-size:10pt">
+        <li><strong>~26% of scholarship applications flagged fake</strong> in the 2022–23 national cycle — 6.7+ lakh of 25.5 lakh, a document/eligibility fraud rate, not an identity-duplication one.</li>
+        <li><strong>1,000+ MP government employees</strong> are under investigation for fraudulent caste certificates, including <strong>600+ Class I officers</strong> — most cases still open, most accused still in post.</li>
+        <li>Every real person in these cases already passed Aadhaar identity checks. The document, not the person, was the fraud.</li>
+      </ul>
+      <div class="card lim warn" style="margin-top:3mm"><strong>This is exactly DocsGuard's target gap</strong> — the document is fabricated or altered even though the applicant is a real, unique, Aadhaar-verified person.</div>
+    </div>
   </div>
-  <div class="card tint"><strong>We deliberately do not overclaim this.</strong>
-  DBT's savings came mostly from Aadhaar <em>identity</em> deduplication — removing ghost people — not document forensics.
-  Pramaan targets the complementary gap: the document is fake even though the person is real. No consolidated
-  "MP loses ₹X crore to fake documents" figure exists publicly, and we will not invent one.</div>
-  <div class="brand">Pramaan</div><div class="num">3</div>
+  <p class="src" style="margin-top:2mm">Source: docs/IMPACT.md §1 (Akashvani, DBT Bharat, HR Katha, ETV Bharat — see doc for full citations).</p>
+  <div class="brand">DocsGuard</div><div class="num">3</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">The scale — cited cases, not extrapolation</div>
+  <h2>This has already happened, repeatedly, at multi-crore scale</h2>
+  <table>
+    <tr><th style="width:30%">Case</th><th style="width:14%">Amount</th><th>Pattern</th><th style="width:20%">Source</th></tr>
+    <tr><td><strong>DBT cumulative leakage removed</strong></td><td class="mono">₹3.48 L cr</td><td>National, Aadhaar-linked identity dedup — <em>not</em> document forensics; cited to show scale, not claimed as DocsGuard's addressable number.</td><td class="src">IMPACT.md §1</td></tr>
+    <tr><td><strong>Ahmedabad fake-ITC (GST) scam</strong></td><td class="mono">₹1,500 cr</td><td>Single Dec-2025 bust; part of ₹36,374 cr detected nationally in FY24–25 alone, ₹1.14L cr cumulative 2020–25.</td><td class="src">FRAUD_TYPOLOGIES.md §6.2</td></tr>
+    <tr><td><strong>MP Jal Nigam Maryadit fake bank guarantee</strong></td><td class="mono">₹202 cr</td><td>ED case — forged PNB/Bank of Baroda guarantees submitted to MPJNL and Rajasthan Renewable Energy Corp to win contracts.</td><td class="src">PITCH_DECK.md / The420.in</td></tr>
+    <tr><td><strong>Fake-guarantee racket, Kolkata syndicate</strong></td><td class="mono">₹183 cr</td><td>CBI arrests incl. a serving PNB official; the same reported case is tied by FRAUD_TYPOLOGIES.md to an MPJNL tender that misled ₹974 cr in contract awards.</td><td class="src">PITCH_DECK.md / Angel One</td></tr>
+    <tr><td><strong>Himachal Pradesh scholarship scam</strong></td><td class="mono">₹181 cr</td><td>CBI case, 2013–2017, fake SC/ST/OBC claims; one institute alone listed 800–1,000 non-existent students to draw ₹20–25 cr.</td><td class="src">FRAUD_TYPOLOGIES.md §6.3</td></tr>
+    <tr><td><strong>Minority scholarship scheme misuse</strong></td><td class="mono">₹144.83 cr</td><td>830 of 1,572 reviewed minority institutions found fake or inactive, over five years.</td><td class="src">IMPACT.md §1 / FRAUD_TYPOLOGIES.md §6.3</td></tr>
+  </table>
+  <div class="card tint" style="margin-top:4mm"><strong>We deliberately do not overclaim this.</strong> No consolidated "₹X crore lost to fake documents in
+  [state] welfare schemes per year" figure exists publicly, and we will not invent one. The table above is six independently
+  reported, sourced cases — not a single audited total, and not DocsGuard's own measured result. DocsGuard has not yet run against real
+  government volumes.</div>
+  <div class="brand">DocsGuard</div><div class="num">4</div>
 </section>
 
 <section class="s">
   <div class="eyebrow">The solution</div>
   <h2>Upload a document. Get a defensible verdict.</h2>
-  <div class="g2" style="gap:8mm;flex:1">
+  <div class="g2" style="gap:7mm;flex:1;min-height:0">
     <div>
       <ul>
-        <li><strong>Verdict</strong> — Authentic / Suspicious / Likely fake, with a 0–100 risk score</li>
-        <li><strong>Red flags</strong> — each quoting the exact evidence on the document</li>
-        <li><strong>Cross-field logic</strong> — does the arithmetic and the story hold up?</li>
-        <li><strong>Identifier validation</strong> — Aadhaar, PAN, GSTIN, IFSC, IBAN, MRZ checksums</li>
-        <li><strong>12-module forensic dossier</strong> — printable, auditable</li>
-        <li><strong>What it could NOT verify</strong> — stated explicitly, never hidden</li>
+        <li><strong>Verdict</strong> — Authentic / Suspicious / Likely fake, with a 0–100 risk score and confidence</li>
+        <li><strong>Red flags</strong> — each quoting the exact evidence on the document, ranked by severity</li>
+        <li><strong>Consistency checks</strong> — PASS / FAIL / WARN cross-field and arithmetic logic tests</li>
+        <li><strong>Identifier validation</strong> — Aadhaar, PAN, GSTIN, IFSC, IBAN, MRZ checksums, computed in code</li>
+        <li><strong>12-module forensic dossier</strong> — executive, forensics, typography, content, identity, security, issuer, financial, compliance, screening, predictive, verdict</li>
+        <li><strong>externalChecksNeeded</strong> — what it explicitly could NOT verify, never hidden, never invented</li>
       </ul>
     </div>
     <div class="card" style="background:#F8FAFC">
-      <div class="eyebrow" style="margin-bottom:2mm">Sample verdict</div>
+      <div class="eyebrow" style="margin-bottom:2mm">Sample verdict card</div>
       <div style="display:flex;align-items:center;gap:3mm;margin-bottom:3mm">
-        <span class="pill r">LIKELY FAKE</span><span class="mono" style="font-size:11pt;color:#B91C1C">risk 88</span>
+        <span class="pill r">LIKELY FAKE</span><span class="mono" style="font-size:10.5pt;color:#B91C1C">risk 88 · confidence 74</span>
       </div>
-      <p style="font-size:10.5pt;margin-bottom:2mm"><strong>Income figure re-typed</strong> — baseline drift + weight mismatch over a wiped region</p>
-      <p style="font-size:10.5pt;margin-bottom:2mm"><strong>Serial altered</strong> — localised compression anomaly</p>
-      <p style="font-size:10.5pt;margin-bottom:2mm"><strong>Declared income contradicts bank balance</strong></p>
-      <p style="font-size:10.5pt;color:#B91C1C"><strong>Identifier fails checksum</strong> — mathematically impossible to have been issued</p>
+      <p class="small" style="margin-bottom:2mm"><strong>Income figure re-typed</strong> — font mismatch + compression seam over the wiped region</p>
+      <p class="small" style="margin-bottom:2mm"><strong>PDF modified 41 min after creation</strong> — re-opened and re-saved after issue</p>
+      <p class="small" style="margin-bottom:2mm"><strong>Declared income contradicts bank statement</strong> in the same submission bundle</p>
+      <p class="small" style="color:#B91C1C;margin-bottom:2mm"><strong>Identifier fails checksum</strong> — mathematically impossible to have been issued</p>
+      <p class="small" style="color:#475569">externalChecksNeeded: confirm certificate number against MP e-District portal</p>
     </div>
   </div>
-  <div class="brand">Pramaan</div><div class="num">4</div>
+  <div class="brand">DocsGuard</div><div class="num">5</div>
 </section>
 
 <section class="s">
-  <div class="eyebrow">How it works</div>
-  <h2>Deterministic facts first. AI reasoning second.</h2>
-  <svg width="100%" viewBox="0 0 900 190" style="margin-top:3mm">
+  <div class="eyebrow">How it actually works</div>
+  <h2>Four stages. Code goes first and code goes last.</h2>
+  <svg width="100%" viewBox="0 0 1000 220" style="margin-top:2mm">
     <defs><marker id="m" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0l8 4.5-8 4.5z" fill="#94A3B8"/></marker></defs>
-    <rect x="2" y="58" width="140" height="74" rx="11" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"/>
-    <text x="72" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#1E40AF">Upload</text>
-    <text x="72" y="108" text-anchor="middle" font-size="11" fill="#475569">image or PDF</text>
-    <line x1="146" y1="95" x2="188" y2="95" stroke="#94A3B8" stroke-width="2" marker-end="url(#m)"/>
-    <rect x="192" y="24" width="200" height="142" rx="11" fill="#fff" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="292" y="50" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">Computed in code</text>
-    <text x="292" y="74" text-anchor="middle" font-size="11" fill="#475569">SHA-256 · PDF producer</text>
-    <text x="292" y="92" text-anchor="middle" font-size="11" fill="#475569">created vs modified · EXIF</text>
-    <text x="292" y="110" text-anchor="middle" font-size="11" fill="#475569">ELA heatmap · QR decode</text>
-    <text x="292" y="136" text-anchor="middle" font-size="12" font-weight="800" fill="#047857">checksums · OFAC</text>
-    <line x1="396" y1="95" x2="438" y2="95" stroke="#94A3B8" stroke-width="2" marker-end="url(#m)"/>
-    <rect x="442" y="24" width="200" height="142" rx="11" fill="#fff" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="542" y="50" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">Claude reasons</text>
-    <text x="542" y="74" text-anchor="middle" font-size="11" fill="#475569">typography · layout</text>
-    <text x="542" y="92" text-anchor="middle" font-size="11" fill="#475569">OCR · cross-field logic</text>
-    <text x="542" y="110" text-anchor="middle" font-size="11" fill="#475569">12-module dossier</text>
-    <line x1="646" y1="95" x2="688" y2="95" stroke="#94A3B8" stroke-width="2" marker-end="url(#m)"/>
-    <rect x="692" y="40" width="204" height="110" rx="11" fill="#F5F8FF" stroke="#2563EB" stroke-width="1.5"/>
-    <text x="794" y="70" text-anchor="middle" font-size="14" font-weight="700" fill="#1E40AF">Adversarial court</text>
-    <text x="794" y="92" text-anchor="middle" font-size="11" fill="#475569">prosecution vs defence</text>
-    <text x="794" y="110" text-anchor="middle" font-size="11" fill="#475569">judge rules on evidence</text>
-    <text x="794" y="132" text-anchor="middle" font-size="12" font-weight="800" fill="#0F172A">verdict + evidence</text>
+    <rect x="0" y="18" width="228" height="184" rx="12" fill="#F5F8FF" stroke="#2563EB" stroke-width="1.6"/>
+    <text x="114" y="42" text-anchor="middle" font-size="12.5" font-weight="800" fill="#1E40AF" font-family="Outfit">1 · Deterministic</text>
+    <text x="114" y="62" text-anchor="middle" font-size="10.5" fill="#475569">SHA-256 · PDF metadata</text>
+    <text x="114" y="80" text-anchor="middle" font-size="10.5" fill="#475569">ELA heatmap · QR decode</text>
+    <text x="114" y="98" text-anchor="middle" font-size="10.5" fill="#475569">Aadhaar/PAN/GSTIN/IFSC/</text>
+    <text x="114" y="114" text-anchor="middle" font-size="10.5" fill="#475569">IBAN/MRZ checksums</text>
+    <text x="114" y="132" text-anchor="middle" font-size="10.5" fill="#475569">OFAC SDN screening</text>
+    <text x="114" y="158" text-anchor="middle" font-size="11.5" font-weight="800" fill="#047857">code, not AI</text>
+    <text x="114" y="184" text-anchor="middle" font-size="9.5" fill="#64748B">no model call yet</text>
+    <line x1="232" y1="110" x2="266" y2="110" stroke="#94A3B8" stroke-width="2" marker-end="url(#m)"/>
+
+    <rect x="270" y="18" width="228" height="184" rx="12" fill="#fff" stroke="#E2E8F0" stroke-width="1.6"/>
+    <text x="384" y="42" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0F172A" font-family="Outfit">2 · Claude reasons</text>
+    <text x="384" y="62" text-anchor="middle" font-size="10.5" fill="#475569">Pass A — fast core verdict</text>
+    <text x="384" y="80" text-anchor="middle" font-size="10.5" fill="#475569">Pass B/C — 12-module</text>
+    <text x="384" y="96" text-anchor="middle" font-size="10.5" fill="#475569">dossier, concurrent</text>
+    <text x="384" y="118" text-anchor="middle" font-size="10.5" fill="#475569">typography · cross-field</text>
+    <text x="384" y="134" text-anchor="middle" font-size="10.5" fill="#475569">logic · OCR plausibility</text>
+    <text x="384" y="158" text-anchor="middle" font-size="11.5" font-weight="800" fill="#0F172A">claude-opus-5</text>
+    <text x="384" y="184" text-anchor="middle" font-size="9.5" fill="#64748B">forced structured output</text>
+    <line x1="502" y1="110" x2="536" y2="110" stroke="#94A3B8" stroke-width="2" marker-end="url(#m)"/>
+
+    <rect x="540" y="18" width="228" height="184" rx="12" fill="#fff" stroke="#E2E8F0" stroke-width="1.6"/>
+    <text x="654" y="42" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0F172A" font-family="Outfit">3 · Adversarial court</text>
+    <text x="654" y="62" text-anchor="middle" font-size="10.5" fill="#475569">Prosecution argues forgery</text>
+    <text x="654" y="80" text-anchor="middle" font-size="10.5" fill="#475569">Defence argues the innocent</text>
+    <text x="654" y="96" text-anchor="middle" font-size="10.5" fill="#475569">explanation, same evidence</text>
+    <text x="654" y="118" text-anchor="middle" font-size="10.5" fill="#475569">Judge rules on both vs the</text>
+    <text x="654" y="134" text-anchor="middle" font-size="10.5" fill="#475569">binding facts from stage 1</text>
+    <text x="654" y="158" text-anchor="middle" font-size="11.5" font-weight="800" fill="#0F172A">decisive + dismissed</text>
+    <text x="654" y="184" text-anchor="middle" font-size="9.5" fill="#64748B">runs concurrently with 2</text>
+    <line x1="772" y1="110" x2="806" y2="110" stroke="#94A3B8" stroke-width="2" marker-end="url(#m)"/>
+
+    <rect x="810" y="18" width="190" height="184" rx="12" fill="#F5F8FF" stroke="#2563EB" stroke-width="1.6"/>
+    <text x="905" y="42" text-anchor="middle" font-size="12.5" font-weight="800" fill="#1E40AF" font-family="Outfit">4 · Binding override</text>
+    <text x="905" y="66" text-anchor="middle" font-size="10.5" fill="#475569">Applied LAST, after</text>
+    <text x="905" y="84" text-anchor="middle" font-size="10.5" fill="#475569">the court's ruling</text>
+    <text x="905" y="106" text-anchor="middle" font-size="10.5" fill="#475569">A failed checksum floors</text>
+    <text x="905" y="122" text-anchor="middle" font-size="10.5" fill="#475569">risk score regardless of</text>
+    <text x="905" y="138" text-anchor="middle" font-size="10.5" fill="#475569">what any narrative argued</text>
+    <text x="905" y="164" text-anchor="middle" font-size="11.5" font-weight="800" fill="#047857">code wins, always</text>
+    <text x="905" y="186" text-anchor="middle" font-size="9.5" fill="#64748B">api/_core.ts:776–783</text>
   </svg>
-  <p style="margin-top:4mm"><strong>The order is the product.</strong> Anything a computer can prove, a computer proves — and the AI is not permitted to argue with it.</p>
-  <div class="brand">Pramaan</div><div class="num">5</div>
+  <p class="small" style="margin-top:2mm"><strong>The order is the product.</strong> Anything a computer can prove, a computer proves — first and last —
+  and neither Claude's reasoning nor the court's ruling is permitted to argue with it. <span class="src">Source: api/_core.ts, api/court-fast.ts</span></p>
+  <div class="brand">DocsGuard</div><div class="num">6</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">Worked example — illustrative walkthrough, not a real case</div>
+  <h2>One tampered income certificate, stage by stage</h2>
+  <p class="small" style="margin-bottom:3mm">A clerk uploads a scanned income certificate. The applicant photo-edited the income figure to fall under a
+  scheme's eligibility threshold before rescanning. Here is exactly which signal fires at which stage, and why the file model traces this back to real,
+  documented forgery patterns for this document class. <span class="src">Signal types: FRAUD_TYPOLOGIES.md §1</span></p>
+  <div class="g4" style="flex:1;min-height:0">
+    <div class="stage"><div class="k">Stage 1 · Deterministic</div><div class="t">Two flags fire in code</div>
+      <ul><li><strong>PDF modified 41 min after creation</strong> — &gt;60s gap flag, re-opened and re-saved post-issue</li>
+      <li><strong>Producer string</strong> = a consumer photo-editing app, not the tehsil e-Gov CMS</li>
+      <li>ID numbers on this document pass their format checksums — no hard override triggers here</li></ul>
+    </div>
+    <div class="stage"><div class="k">Stage 2 · Claude vision</div><div class="t">Pixel-level tell</div>
+      <ul><li><strong>Font mismatch</strong> on the income figure vs. the template's fixed text</li>
+      <li><strong>Compression seam</strong> — the edited region shows different JPEG blockiness than the surrounding scan</li>
+      <li><strong>Consistency check FAIL</strong> — declared income contradicts the bank statement in the same bundle</li></ul>
+    </div>
+    <div class="stage"><div class="k">Stage 3 · The court</div><div class="t">Argued both ways</div>
+      <ul><li><strong>Defence:</strong> "could be a routine rescan" — Weak, no corroborating benign explanation for the font mismatch</li>
+      <li><strong>Prosecution:</strong> font seam + compression seam + income/bank contradiction, three independent signals agreeing — Strong</li>
+      <li><strong>Judge:</strong> decisive = the three-signal agreement; dismissed = "routine rescan" as insufficient against it</li></ul>
+    </div>
+    <div class="stage"><div class="k">Stage 4 · Result</div><div class="t">Verdict issued</div>
+      <ul><li><span class="pill r">LIKELY FAKE</span></li>
+      <li style="margin-top:1.5mm">risk score <strong>82</strong>, confidence <strong>77</strong></li>
+      <li><strong>externalChecksNeeded:</strong> confirm the certificate number against the e-District portal directly — never via a contact on the document itself</li></ul>
+    </div>
+  </div>
+  <div class="brand">DocsGuard</div><div class="num">7</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">The deterministic layer</div>
+  <h2>What mathematics decides before any model sees the file</h2>
+  <div class="two">
+    <div class="col">
+      <table>
+        <tr><th>Identifier</th><th>Rule applied</th><th>A FAIL proves</th></tr>
+        <tr><td class="mono">Aadhaar</td><td>Verhoeff checksum algorithm</td><td>Number could not have been issued</td></tr>
+        <tr><td class="mono">PAN</td><td>Structure + entity-type code</td><td>Malformed / fabricated PAN</td></tr>
+        <tr><td class="mono">GSTIN</td><td>mod-36 check character</td><td>Invalid registration number</td></tr>
+        <tr><td class="mono">IFSC</td><td>Structural format validation</td><td>Not a real bank/branch code shape</td></tr>
+        <tr><td class="mono">IBAN</td><td>mod-97 checksum</td><td>Account number fails international standard</td></tr>
+        <tr><td class="mono">MRZ (ICAO 9303)</td><td>TD1 / TD2 / TD3 check-digit rules</td><td>Passport/ID machine-readable zone is invalid</td></tr>
+      </table>
+      <p class="src" style="margin-top:2mm">Source: api/verification.ts; module narrative in api/_core.ts:736. Algorithms confirmed against the live code, not recalled from memory.</p>
+    </div>
+    <div class="col" style="justify-content:center">
+      <div class="card" style="text-align:center;padding:6mm">
+        <div class="stat"><div class="n" style="font-size:34pt">60/60</div><div class="l">unit tests pass, verified live</div></div>
+        <p class="small mono" style="margin-top:3mm">node --test api/verification.test.mjs</p>
+        <p class="small mono">→ 60 pass, 0 fail</p>
+      </div>
+      <div class="card tint" style="margin-top:3mm"><strong>Why this matters:</strong> a checksum FAIL is mathematical proof — not a judgment call, not
+      something a persuasive AI argument or an adversarial court ruling can override. It is the one signal in the whole system that is
+      100% deterministic, reproducible, and binding.</div>
+    </div>
+  </div>
+  <div class="brand">DocsGuard</div><div class="num">8</div>
 </section>
 
 <section class="s">
   <div class="eyebrow">The differentiator</div>
   <h2>We made the AI argue with itself</h2>
-  <p class="lead">A single AI pass either cries fraud at every compression artifact, or waves everything through.</p>
-  <div class="g3" style="margin-top:5mm;flex:1">
+  <p class="lead">A single AI pass either cries fraud at every compression artifact, or waves everything through. So every
+  scan runs a three-role adversarial review, in one structured call, concurrently with the 12-module dossier.</p>
+  <div class="g3" style="margin-top:4mm">
     <div class="card" style="background:#FEF2F2;border-color:#FECACA">
       <span class="pill r">Prosecution</span>
-      <p style="font-size:11pt;margin-top:3mm">Builds the strongest honest case that it is forged — citing only observable evidence.</p>
+      <p class="small" style="margin-top:3mm">Builds the strongest honest case that the document is forged — citing only evidence actually visible in the image, the ELA heatmap, or the verified metadata. Weak points are dropped, not padded.</p>
     </div>
     <div class="card" style="background:#ECFDF5;border-color:#A7F3D0">
       <span class="pill g">Defence</span>
-      <p style="font-size:11pt;margin-top:3mm">Gives the innocent explanation — scanner artifacts, recompression, a legitimate re-save — and exposes overreach.</p>
+      <p class="small" style="margin-top:3mm">Argues the innocent explanation first — JPEG recompression, scanner noise, a legitimate re-save — and flags exactly where the prosecution overreaches.</p>
     </div>
     <div class="card tint">
-      <span class="pill" style="background:#EFF6FF;border-color:#DBEAFE;color:#1E40AF">Judge</span>
-      <p style="font-size:11pt;margin-top:3mm">Weighs both against <strong>binding</strong> code-computed facts. Records what was <strong>decisive</strong> — and what it <strong>dismissed</strong>.</p>
+      <span class="pill b">Judge</span>
+      <p class="small" style="margin-top:3mm">Weighs both against the <strong>binding</strong> code-computed facts from Stage 1. Records what was <strong>decisive</strong> and what was <strong>dismissed</strong> — and why.</p>
     </div>
   </div>
-  <div class="card" style="margin-top:4mm"><strong>That dismissal list is the false-positive guard</strong> — and the officer sees it.
-  A failed checksum cannot be argued away; an OFAC list that failed to download cannot be spun into "clean".</div>
-  <div class="brand">Pramaan</div><div class="num">6</div>
+  <div class="card" style="margin-top:4mm"><strong>Then the binding hard-failure override runs one more time, after the ruling.</strong> No prosecution
+  case, no defence argument, no judge's narrative can undo a failed checksum or a sanctions list that failed to download — the floor is
+  re-asserted last, in code, unconditionally. <span class="src">Source: api/_core.ts:776–783, api/court-fast.ts</span></div>
+  <div class="brand">DocsGuard</div><div class="num">9</div>
 </section>
 
 <section class="s">
-  <div class="eyebrow">Proof</div>
-  <h2>What we actually tested</h2>
+  <div class="eyebrow">Proof — measured, not claimed</div>
+  <h2>What we actually ran, today, on this code</h2>
   <table>
     <tr><th>Claim</th><th>Evidence</th></tr>
-    <tr><td>Identifier validation is real mathematics</td><td><span class="mono">60/60</span> unit tests pass — Verhoeff, PAN, GSTIN mod-36, IFSC, IBAN mod-97, ICAO 9303 MRZ</td></tr>
-    <tr><td>Forensic pipeline runs with no API key</td><td><span class="mono">npm run selftest</span> → 5/5 pass</td></tr>
-    <tr><td>ELA responds to real pixel edits</td><td>mean error <span class="mono">0.196 → 0.264</span> when a splice was introduced</td></tr>
-    <tr><td>Watchlist screening is live, not mocked</td><td>real OFAC SDN export — <span class="mono">19,393</span> records parsed</td></tr>
+    <tr><td>Identifier validation is real mathematics</td><td><span class="mono">60/60</span> unit tests pass — Verhoeff, PAN, GSTIN mod-36, IFSC, IBAN mod-97, ICAO 9303 MRZ (TD1/TD2/TD3) — <span class="src">node --test api/verification.test.mjs</span></td></tr>
+    <tr><td>The deterministic engine runs with no API key</td><td><span class="mono">npm run selftest</span> → <strong>5/5</strong> checks pass: synthetic doc generation, ELA routine, ELA sanity, QR round-trip, verification-suite run</td></tr>
+    <tr><td>ELA responds to a real pixel edit, not noise</td><td>mean error <span class="mono">0.196 → 0.264</span> when a splice was introduced into the same test image — measured, deterministic, reproducible</td></tr>
+    <tr><td>Watchlist screening is live, not mocked</td><td>Real US Treasury OFAC SDN CSV export fetched live (HTTP 200) and parsed — code enforces a &gt;1,000-record sanity floor before trusting the result</td></tr>
   </table>
-  <div class="card" style="margin-top:5mm;border-left:3px solid #EF4444;background:#FEF2F2">
+  <div class="card" style="margin-top:4mm;border-left:3px solid #EF4444;background:#FEF2F2">
     <strong>And what we refuse to claim:</strong> Error-Level Analysis is weak on flat, vector-rendered documents — ordinary
-    body text produces as much error as a splice. We report it as one weak indicative signal, never as a verdict.
-    We would rather tell you that than be caught by a judge who knows it.
+    body text produces as much error as a splice (see next slide). We report it as one indicative signal among several, never as a
+    standalone verdict — and we would rather tell you that than be caught by a reviewer who knows it.
   </div>
-  <div class="brand">Pramaan</div><div class="num">7</div>
+  <div class="brand">DocsGuard</div><div class="num">10</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">Honest limitations</div>
+  <h2>What DocsGuard cannot yet do — stated plainly</h2>
+  <div class="g2" style="gap:4mm">
+    <div class="col">
+      <div class="card lim" style="margin-bottom:3mm"><strong>ELA is weak on flat, vector-rendered documents.</strong> ELA depends on a prior JPEG compression
+      history to diff against. A PDF rendered to PNG, a vector-drawn certificate, or an already high-quality JPEG has little compression
+      history for a single resave to reveal — the whole image reads as uniformly low-error and a spliced region may not stand out.</div>
+      <div class="card lim warn"><strong>No live source-of-truth is wired up yet.</strong> No DigiLocker, e-District, UIDAI, GST/PAN registry, or
+      MCA call happens today. Anything that needs one is listed in <span class="mono">externalChecksNeeded</span>, never asserted — but a
+      well-forged, internally-consistent document can still pass as AUTHENTIC.</div>
+    </div>
+    <div class="col">
+      <div class="card lim warn" style="margin-bottom:3mm"><strong>Confidence is self-reported, not statistically calibrated.</strong> It is the
+      model's own stated certainty — not checked against a labeled dataset, a held-out test set, or repeated sampling. Treat it as a triage
+      signal, not a validated probability.</div>
+      <div class="card lim"><strong>PDF metadata is itself editable.</strong> Producer, creator, author, and timestamp fields can be spoofed by a
+      forger using a metadata-editing tool. They are genuinely useful — most casual forgers don't bother cleaning them — but they are
+      evidence, not proof.</div>
+    </div>
+  </div>
+  <p class="src" style="margin-top:2mm">Source: docs/FORENSIC_METHODOLOGY.md §6, items 1, 3, 4, 6.</p>
+  <div class="brand">DocsGuard</div><div class="num">11</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">Competitive landscape</div>
+  <h2>The obvious open-source shortcuts are not actually free</h2>
+  <p class="small" style="margin-bottom:3mm">We researched the three most-cited open-source ID/KYC/signature-verification repos before building anything
+  in-house. All three ship <strong>no LICENSE file</strong> — under default copyright law, that means no permission to use, modify, or
+  redistribute, not "MIT-like."</p>
+  <table>
+    <tr><th style="width:26%">Project</th><th>What it does</th><th style="width:34%">Licence — as reported by GitHub's own API</th></tr>
+    <tr><td class="mono">MiniAiLive/ID-DocumentRecognition</td><td>ID/passport/driver's-license OCR, 200+ countries</td><td><span class="pill a">license: null</span> — commercial, trial-gated; "Contact us to get a trial License." Windows-only.</td></tr>
+    <tr><td class="mono">DoubangoTelecom/KYC-Documents-Verif-SDK</td><td>ID/passport/visa recognition, 250+ countries</td><td><span class="pill a">license: null</span> — model weights in a private, approval-gated repo; decompiling forbidden by the README.</td></tr>
+    <tr><td class="mono">amaljoseph/…YOLOv5-and-CycleGAN</td><td>Signature detection, cleaning, verification</td><td><span class="pill r">license: null</span> — no grant at all, <strong>and</strong> its YOLOv5 dependency is Ultralytics-licensed <strong>AGPL-3.0</strong>, forcing full source disclosure or a paid Enterprise licence for any commercial use.</td></tr>
+  </table>
+  <div class="card tint" style="margin-top:4mm"><strong>What this means for DocsGuard:</strong> the deterministic checksum layer (Verhoeff/PAN/GSTIN/IFSC/IBAN/MRZ) and
+  ELA are hand-built in TypeScript with zero new dependencies and zero licensing exposure — the closest genuinely reusable reference we
+  found was MIT-licensed but Python/PyTorch (camilooscargbaptista/cv-fraud-detection), useful to validate our architecture direction, not to vendor.
+  <span class="src">Source: docs/COMPETITIVE_RESEARCH.md §1, §3</span></div>
+  <div class="brand">DocsGuard</div><div class="num">12</div>
 </section>
 
 <section class="s">
@@ -180,40 +368,74 @@ th{font-size:8.5pt;text-transform:uppercase;letter-spacing:.1em;color:#64748B}
   <table>
     <tr><th>Source</th><th>What it proves</th><th>Reality</th></tr>
     <tr><td>Aadhaar offline QR / XML</td><td>Signed identity data vs UIDAI public key</td><td><span class="pill g">Buildable now</span></td></tr>
-    <tr><td>OFAC / UN / EU lists</td><td>Watchlist screening</td><td><span class="pill g">Live today</span></td></tr>
+    <tr><td>OFAC / UN / EU sanctions lists</td><td>Watchlist screening</td><td><span class="pill g">Live today</span></td></tr>
     <tr><td>ICAO 9303 MRZ</td><td>Passport / ID check digits</td><td><span class="pill g">Shipped</span></td></tr>
-    <tr><td>PAN / GSTIN / MCA / IEC</td><td>Registry existence and status</td><td><span class="pill a">Paid aggregator</span></td></tr>
-    <tr><td>DigiLocker / e-District</td><td><strong>Did this office actually issue it?</strong></td><td><span class="pill r">Needs partnership</span></td></tr>
+    <tr><td>PAN / GSTIN / MCA / IEC registries</td><td>Registration existence and status</td><td><span class="pill a">Paid aggregator required</span></td></tr>
+    <tr><td>DigiLocker / e-District</td><td><strong>Did this office actually issue it?</strong></td><td><span class="pill r">Needs government partnership</span></td></tr>
   </table>
-  <div class="card tint" style="margin-top:5mm">DigiLocker is the endgame — it turns <em>"internally consistent"</em> into
-  <em>"issued by that office."</em> It needs a government sponsor, which is exactly what a department pilot unlocks.</div>
-  <div class="brand">Pramaan</div><div class="num">8</div>
+  <div class="card tint" style="margin-top:4mm">DigiLocker is the endgame — it turns <em>"internally consistent"</em> into <em>"issued by that office."</em>
+  MP already has live e-District DigiLocker integration for some document classes (e.g. RCMS land records); others, like older marksheets,
+  reportedly fail to resolve reliably. It needs a government sponsor — exactly what a department pilot unlocks. <span class="src">Source: docs/IMPACT.md §4 (Phase 2)</span></div>
+  <div class="brand">DocsGuard</div><div class="num">13</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">The pilot plan</div>
+  <h2>One scheme, one office, measured against manual review</h2>
+  <div class="g3" style="margin-bottom:4mm">
+    <div class="card"><h3>Phase 1 — pilot</h3><p class="small">One high-fraud-signal scheme, one district office, 3–6 months. Runs alongside existing manual
+    review as decision support — every verdict advisory, no auto-rejection. This is the only way to measure real precision/recall against
+    outcomes officers already have to determine anyway.</p></div>
+    <div class="card"><h3>Phase 2 — district-wide</h3><p class="small">Full document set at one office: caste/income/domicile certificates,
+    marksheets, PDS bank statements. Begin turning externalChecksNeeded items into real PASS/FAIL via e-District/DigiLocker where a
+    certificate carries a resolvable application number.</p></div>
+    <div class="card"><h3>Phase 3 — state-wide</h3><p class="small">Roll out to all districts for the schemes validated in Phase 1–2; add the
+    officer dashboard (queue, filter by verdict/severity, audit trail); evaluate extension to tender-document screening.</p></div>
+  </div>
+  <h3>What the pilot must measure before any scale decision</h3>
+  <div class="g5">
+    <div class="card stat"><div class="n" style="font-size:15pt">Fraud-catch rate</div><div class="l">of flagged docs, % confirmed fraudulent on investigation</div></div>
+    <div class="card stat"><div class="n" style="font-size:15pt">False-positive rate</div><div class="l">the single most important trust metric — tracked from day one</div></div>
+    <div class="card stat"><div class="n" style="font-size:15pt">Officer time/doc</div><div class="l">decision time, not raw API latency</div></div>
+    <div class="card stat"><div class="n" style="font-size:15pt">Turnaround time</div><div class="l">submission to decision, before vs after</div></div>
+    <div class="card stat"><div class="n" style="font-size:15pt">Coverage</div><div class="l">% of scheme volume actually routed through DocsGuard</div></div>
+  </div>
+  <p class="src" style="margin-top:2mm">Source: docs/IMPACT.md §3, §4. None of these numbers exist for DocsGuard yet — they are the deliverable of Phase 1, not a pre-launch claim.</p>
+  <div class="brand">DocsGuard</div><div class="num">14</div>
 </section>
 
 <section class="s">
   <div class="eyebrow">The ask</div>
   <h2>One scheme. One department. Real documents.</h2>
   <p class="lead" style="max-width:250mm">A pilot gives us the two things we cannot generate ourselves: a labelled dataset
-  to calibrate confidence against, and the sponsorship needed for DigiLocker issuer verification.</p>
-  <div class="g2" style="margin-top:6mm">
-    <div class="card"><strong>What we measure</strong>
-      <ul style="margin-top:3mm;font-size:11pt">
-        <li>Fraudulent documents caught that manual review missed</li>
-        <li>False positives — honest applicants wrongly flagged</li>
-        <li>Officer time per application</li>
-        <li>Turnaround, submission to decision</li>
+  to calibrate confidence against, and the government sponsorship needed for DigiLocker issuer verification.</p>
+  <div class="g2" style="margin-top:5mm">
+    <div class="card"><strong>Non-negotiables</strong>
+      <ul style="margin-top:3mm;font-size:10.3pt">
+        <li>Counter-level triage — clerk uploads, gets a reason in seconds</li>
+        <li>Every verdict stores its full evidence — a real audit trail</li>
+        <li><strong>The officer decides.</strong> DocsGuard recommends; it never auto-rejects</li>
       </ul>
     </div>
-    <div class="card tint"><strong>Where it sits</strong>
-      <ul style="margin-top:3mm;font-size:11pt">
-        <li>Counter-level triage — clerk uploads, gets a reason</li>
-        <li>Audit trail — every verdict stores its evidence</li>
-        <li><strong>Officer decides.</strong> Pramaan recommends; it never auto-rejects</li>
+    <div class="card tint"><strong>What we bring on day one</strong>
+      <ul style="margin-top:3mm;font-size:10.3pt">
+        <li>A working, tested pipeline — 60/60 identifier tests, 5/5 selftest, live OFAC screening</li>
+        <li>An adversarial court that shows its work — decisive and dismissed, every time</li>
+        <li>An honesty architecture that never fabricates a lookup it didn't perform</li>
       </ul>
     </div>
   </div>
-  <p style="margin-top:7mm;font-size:13pt"><strong>github.com/Yashraj00700/pramaan</strong></p>
-  <div class="brand">Pramaan</div><div class="num">9</div>
+  <p style="margin-top:6mm;font-size:12pt"><strong>github.com/Yashraj00700/pramaan</strong></p>
+  <div class="brand">DocsGuard</div><div class="num">15</div>
+</section>
+
+<section class="s hero" style="justify-content:center;align-items:flex-start">
+  <svg width="52" height="52" viewBox="0 0 64 64" fill="none"><path d="M32 5l20 8v15c0 12-8.4 21.2-20 26C20.4 49.2 12 40 12 28V13l20-8z" fill="#fff"/><path d="M24 31.5l6 6 12-13" stroke="#1E3A8A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <h1 class="d" style="font-size:36pt;font-weight:900;margin:6mm 0 3mm">Proof, in seconds, that doesn't lie about what it knows.</h1>
+  <p style="font-size:12pt;opacity:.85;max-width:210mm">Deterministic mathematics decides what mathematics can decide. Claude reasons over what's left.
+  An adversarial court stress-tests the outcome. And the officer decides — always.</p>
+  <p style="font-size:12pt;opacity:.7;margin-top:8mm">github.com/Yashraj00700/pramaan &nbsp;·&nbsp; Thank you — questions welcome.</p>
+  <div class="brand">DocsGuard</div><div class="num">16</div>
 </section>
 
 </body></html>
