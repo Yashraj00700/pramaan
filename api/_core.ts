@@ -14,7 +14,7 @@
  *      externalChecksNeeded).
  *
  * The ANTHROPIC_API_KEY lives only on the server — never shipped to the browser.
- * Env tunables: ANALYSIS_EFFORT (default high), WEB_SEARCH_MAX_USES (default 4; 0 disables).
+ * Env tunables: ANALYSIS_EFFORT (default low), WEB_SEARCH_MAX_USES (default 0 = off).
  */
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -25,7 +25,7 @@ import sharp from 'sharp';
 import jsQR from 'jsqr';
 import { runDeterministicChecks } from './verification.js';
 import { screenNames } from './sanctions.js';
-import { runCourt } from './court.js';
+import { runCourt } from './court-fast.js';
 
 const MODEL = 'claude-opus-5';
 
@@ -395,18 +395,30 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
   if (!apiKey) throw new Error('Server is missing ANTHROPIC_API_KEY. Set it in .env.local (local) or the Vercel project env.');
 
   const buf = Buffer.from(input.fileBase64, 'base64');
+
+  // Downscale big scans before sending. A 1240x1754 certificate carries far more
+  // pixels than the model needs to read fields and spot typography defects, and
+  // image size is a direct latency cost on every request.
+  let sendB64 = input.fileBase64;
+  if ((input.mediaType || '').startsWith('image/')) {
+    try {
+      const small = await sharp(buf).rotate().resize({ width: 1100, height: 1100, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+      if (small.length < buf.length) sendB64 = small.toString('base64');
+    } catch { /* fall back to the original */ }
+  }
   const { signals, text: metaText, extraImages } = await extractMetadata(buf, input.mediaType, input.fileName);
 
   const client = new Anthropic({ apiKey });
-  const effort = (process.env.ANALYSIS_EFFORT || 'high') as any;
-  const webMax = Number.isFinite(Number(process.env.WEB_SEARCH_MAX_USES)) ? Number(process.env.WEB_SEARCH_MAX_USES) : 4;
+  const effort = (process.env.ANALYSIS_EFFORT || 'low') as any;
+  // Web search is the biggest latency sink; off by default, opt in via env.
+  const webMax = Number.isFinite(Number(process.env.WEB_SEARCH_MAX_USES)) ? Number(process.env.WEB_SEARCH_MAX_USES) : 0;
 
   const tools: any[] = [
     { name: 'submit_report', description: 'Submit the complete structured document-authenticity report.', input_schema: REPORT_SCHEMA as any },
   ];
   if (webMax > 0) tools.unshift({ type: 'web_search_20260209', name: 'web_search', max_uses: webMax });
 
-  const userContent: any[] = [contentBlock(input.mediaType, input.fileBase64)];
+  const userContent: any[] = [contentBlock(input.mediaType, sendB64)];
   for (const img of extraImages) {
     userContent.push({ type: 'text', text: img.caption });
     userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } });
@@ -417,7 +429,7 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
   });
 
   const params = (messages: any[]) => ({
-    model: MODEL, max_tokens: 16000, thinking: { type: 'adaptive' }, output_config: { effort } as any,
+    model: MODEL, max_tokens: 9000, thinking: { type: 'adaptive' }, output_config: { effort } as any,
     system: SYSTEM, tools, tool_choice: { type: 'auto' }, messages,
   }) as any;
 
@@ -516,7 +528,7 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
     const unique = Array.from(new Set(names)).slice(0, 5);
     if (unique.length) {
       // The OFAC export is ~5MB; give it room before honestly reporting "unavailable".
-      const res = await screenNames(unique, { timeoutMs: 12000 });
+      const res = await screenNames(unique, { timeoutMs: 5000 });
       if (res?.checks?.length) {
         report.consistencyChecks = [...report.consistencyChecks, ...res.checks];
         mergeIntoModule(
@@ -559,7 +571,7 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
       userContent,
       baseReport: report,
       bindingFacts,
-      effort: 'medium',
+      effort: 'low',
     });
 
     if (court && court.ruling) {
