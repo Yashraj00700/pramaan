@@ -448,6 +448,361 @@ export function validatePIN(v: string): ValidationResult {
 }
 
 // ===========================================================================
+// validateMRZ — ICAO 9303 Machine Readable Zone check-digit validation
+// ===========================================================================
+//
+// Supports the three ICAO 9303 MRZ layouts:
+//   TD3 (passports)         — 2 lines x 44 characters
+//   TD2 (ID cards/visas)    — 2 lines x 36 characters
+//   TD1 (ID cards)          — 3 lines x 30 characters
+//
+// The check-digit algorithm is identical across all three layouts: each
+// character maps to a numeric value (0-9 -> itself, A-Z -> 10-35, filler
+// '<' -> 0), positions are weighted with the repeating cycle 7, 3, 1, the
+// products are summed, and the check digit is that sum mod 10. This same
+// arithmetic produces the document-number check digit, the date-of-birth
+// check digit, the date-of-expiry check digit, and (composed over several
+// fields) the final composite check digit.
+//
+// Honest limit (same philosophy as every other validator in this file):
+// a PASS here proves the MRZ is internally self-consistent — i.e. it was
+// not mistyped, OCR'd wrong, or hand-tampered without recomputing the
+// checksums — not that the passport/ID itself is genuine or that a live
+// registry has this exact person. State that limit in the UI.
+
+export type MRZDocType = 'TD1' | 'TD2' | 'TD3';
+
+export interface MRZFieldCheck {
+  /** Human-readable field name, e.g. "Document number", "Composite". */
+  field: string;
+  /** False for an optional field that is entirely filler ('<') padding. */
+  present: boolean;
+  /** The check-digit character as printed in the MRZ. */
+  provided: string;
+  /** The check digit ICAO 9303 arithmetic computes for this field's data. */
+  expected: string;
+  valid: boolean;
+}
+
+export interface MRZValidationResult {
+  valid: boolean;
+  docType: MRZDocType | null;
+  reason: string;
+  fields: MRZFieldCheck[];
+  /** Best-effort structural extraction (never guessed — read straight off the MRZ data fields). */
+  extracted: Record<string, string>;
+}
+
+// Weight cycle used positionally (position 0 -> 7, 1 -> 3, 2 -> 1, 3 -> 7, ...).
+const MRZ_WEIGHTS = [7, 3, 1];
+
+function mrzCharValue(c: string): number {
+  if (c >= '0' && c <= '9') return c.charCodeAt(0) - 48;
+  if (c >= 'A' && c <= 'Z') return c.charCodeAt(0) - 65 + 10;
+  if (c === '<') return 0;
+  return NaN;
+}
+
+/** Computes the ICAO 9303 weighted 7-3-1 mod-10 check digit over `data`. */
+function mrzCheckDigit(data: string): number {
+  let sum = 0;
+  for (let i = 0; i < data.length; i++) {
+    const v = mrzCharValue(data[i]);
+    sum += (Number.isNaN(v) ? 0 : v) * MRZ_WEIGHTS[i % 3];
+  }
+  return sum % 10;
+}
+
+function isBlankMrzField(data: string): boolean {
+  return data.replace(/</g, '') === '';
+}
+
+/**
+ * A provided check-digit character matches either literally, or — only when
+ * the underlying field is entirely filler — via the common real-world
+ * convention where issuers print '<' itself as the check digit for a wholly
+ * blank optional field (whose mathematically correct check digit, being an
+ * all-zero-value input, is always 0). This mirrors how issuing authorities
+ * actually print blank optional-data check digits and avoids a false hard
+ * failure on a legitimately blank field; it never masks a genuine mismatch
+ * on a field that actually carries data.
+ */
+function mrzCheckDigitMatches(provided: string, expected: number, dataIsBlank: boolean): boolean {
+  if (provided === String(expected)) return true;
+  if (dataIsBlank && provided === '<' && expected === 0) return true;
+  return false;
+}
+
+function buildMrzFieldCheck(field: string, data: string, provided: string): MRZFieldCheck {
+  const expected = mrzCheckDigit(data);
+  const blank = isBlankMrzField(data);
+  return {
+    field,
+    present: !blank,
+    provided,
+    expected: String(expected),
+    valid: mrzCheckDigitMatches(provided, expected, blank),
+  };
+}
+
+function mrzReason(docType: MRZDocType, fields: MRZFieldCheck[]): string {
+  const failed = fields.filter((f) => !f.valid);
+  if (failed.length === 0) {
+    return `${docType} MRZ: all ${fields.length} ICAO 9303 check digits (weighted 7-3-1 mod-10) are mathematically valid — the MRZ is internally self-consistent.`;
+  }
+  const names = failed.map((f) => f.field).join(', ');
+  return `${docType} MRZ: ${failed.length} of ${fields.length} check digit(s) fail ICAO 9303 arithmetic (${names}) — this MRZ is not internally self-consistent.`;
+}
+
+/** Splits an MRZ name field ("SURNAME<<GIVEN<NAMES<<<...") into [surname, givenNames]. */
+function splitMrzName(nameField: string): [string, string] {
+  const parts = nameField.split('<<');
+  const surname = (parts[0] || '').replace(/</g, ' ').trim().replace(/\s+/g, ' ');
+  const given = (parts[1] || '').replace(/</g, ' ').trim().replace(/\s+/g, ' ');
+  return [surname, given];
+}
+
+function parseTD3(lines: string[]): MRZValidationResult {
+  const [line1, line2] = lines;
+
+  const documentNumber = line2.slice(0, 9);
+  const documentNumberCheck = line2[9];
+  const nationality = line2.slice(10, 13);
+  const dob = line2.slice(13, 19);
+  const dobCheck = line2[19];
+  const sex = line2[20];
+  const expiry = line2.slice(21, 27);
+  const expiryCheck = line2[27];
+  const personalNumber = line2.slice(28, 42);
+  const personalNumberCheck = line2[42];
+  const compositeCheck = line2[43];
+  const compositeData =
+    line2.slice(0, 10) + line2.slice(13, 20) + line2.slice(21, 28) + line2.slice(28, 43);
+
+  const fields: MRZFieldCheck[] = [
+    buildMrzFieldCheck('Document number', documentNumber, documentNumberCheck),
+    buildMrzFieldCheck('Date of birth', dob, dobCheck),
+    buildMrzFieldCheck('Date of expiry', expiry, expiryCheck),
+    buildMrzFieldCheck('Personal number (optional)', personalNumber, personalNumberCheck),
+    buildMrzFieldCheck('Composite', compositeData, compositeCheck),
+  ];
+
+  const issuingState = line1.slice(2, 5);
+  const [surname, givenNames] = splitMrzName(line1.slice(5));
+
+  const extracted: Record<string, string> = {
+    documentNumber: documentNumber.replace(/</g, ''),
+    issuingState,
+    nationality,
+    dateOfBirth: dob,
+    sex,
+    dateOfExpiry: expiry,
+    surname,
+    givenNames,
+  };
+  if (!isBlankMrzField(personalNumber)) extracted.personalNumber = personalNumber.replace(/</g, '');
+
+  return {
+    valid: fields.every((f) => f.valid),
+    docType: 'TD3',
+    reason: mrzReason('TD3', fields),
+    fields,
+    extracted,
+  };
+}
+
+function parseTD2(lines: string[]): MRZValidationResult {
+  const [line1, line2] = lines;
+
+  const documentNumber = line2.slice(0, 9);
+  const documentNumberCheck = line2[9];
+  const nationality = line2.slice(10, 13);
+  const dob = line2.slice(13, 19);
+  const dobCheck = line2[19];
+  const sex = line2[20];
+  const expiry = line2.slice(21, 27);
+  const expiryCheck = line2[27];
+  const optionalData = line2.slice(28, 35);
+  const compositeCheck = line2[35];
+  const compositeData =
+    line2.slice(0, 10) + line2.slice(13, 20) + line2.slice(21, 28) + line2.slice(28, 35);
+
+  const fields: MRZFieldCheck[] = [
+    buildMrzFieldCheck('Document number', documentNumber, documentNumberCheck),
+    buildMrzFieldCheck('Date of birth', dob, dobCheck),
+    buildMrzFieldCheck('Date of expiry', expiry, expiryCheck),
+    buildMrzFieldCheck('Composite', compositeData, compositeCheck),
+  ];
+
+  const issuingState = line1.slice(2, 5);
+  const [surname, givenNames] = splitMrzName(line1.slice(5));
+
+  const extracted: Record<string, string> = {
+    documentNumber: documentNumber.replace(/</g, ''),
+    issuingState,
+    nationality,
+    dateOfBirth: dob,
+    sex,
+    dateOfExpiry: expiry,
+    surname,
+    givenNames,
+  };
+  if (!isBlankMrzField(optionalData)) extracted.optionalData = optionalData.replace(/</g, '');
+
+  return {
+    valid: fields.every((f) => f.valid),
+    docType: 'TD2',
+    reason: mrzReason('TD2', fields),
+    fields,
+    extracted,
+  };
+}
+
+function parseTD1(lines: string[]): MRZValidationResult {
+  const [line1, line2, line3] = lines;
+
+  const documentNumber = line1.slice(5, 14);
+  const documentNumberCheck = line1[14];
+  const optionalData1 = line1.slice(15, 30);
+  const dob = line2.slice(0, 6);
+  const dobCheck = line2[6];
+  const sex = line2[7];
+  const expiry = line2.slice(8, 14);
+  const expiryCheck = line2[14];
+  const nationality = line2.slice(15, 18);
+  const optionalData2 = line2.slice(18, 29);
+  const compositeCheck = line2[29];
+  const compositeData =
+    documentNumber + documentNumberCheck + optionalData1 + dob + dobCheck + expiry + expiryCheck + optionalData2;
+
+  const fields: MRZFieldCheck[] = [
+    buildMrzFieldCheck('Document number', documentNumber, documentNumberCheck),
+    buildMrzFieldCheck('Date of birth', dob, dobCheck),
+    buildMrzFieldCheck('Date of expiry', expiry, expiryCheck),
+    buildMrzFieldCheck('Composite', compositeData, compositeCheck),
+  ];
+
+  const documentCode = line1.slice(0, 2);
+  const issuingState = line1.slice(2, 5);
+  const [surname, givenNames] = splitMrzName(line3);
+
+  const extracted: Record<string, string> = {
+    documentCode,
+    documentNumber: documentNumber.replace(/</g, ''),
+    issuingState,
+    nationality,
+    dateOfBirth: dob,
+    sex,
+    dateOfExpiry: expiry,
+    surname,
+    givenNames,
+  };
+
+  return {
+    valid: fields.every((f) => f.valid),
+    docType: 'TD1',
+    reason: mrzReason('TD1', fields),
+    fields,
+    extracted,
+  };
+}
+
+/**
+ * Validates a Machine Readable Zone (MRZ) — 2 lines of 44 chars (TD3 /
+ * passport), 2 lines of 36 chars (TD2), or 3 lines of 30 chars (TD1) — using
+ * pure ICAO 9303 check-digit arithmetic (no OCR, no ML, no network calls).
+ * Input lines are normalized (whitespace stripped, uppercased) before
+ * layout detection. Never guesses a layout: if the line count/lengths don't
+ * match a known MRZ shape, or a line contains a character outside
+ * `A-Z0-9<`, returns a `valid:false` result with `docType: null` and an
+ * explicit reason rather than fabricating a check.
+ */
+export function validateMRZ(lines: string[]): MRZValidationResult {
+  const cleaned = (Array.isArray(lines) ? lines : [])
+    .map((l) => (typeof l === 'string' ? l.replace(/\s+/g, '').toUpperCase() : ''))
+    .filter((l) => l.length > 0);
+
+  const charsetRe = /^[A-Z0-9<]+$/;
+  const invalidCharLine = cleaned.find((l) => !charsetRe.test(l));
+  if (invalidCharLine) {
+    return {
+      valid: false,
+      docType: null,
+      reason: 'MRZ lines contain characters outside A-Z, 0-9, and the "<" filler — not a valid MRZ.',
+      fields: [],
+      extracted: {},
+    };
+  }
+
+  if (cleaned.length === 2 && cleaned[0].length === 44 && cleaned[1].length === 44) {
+    return parseTD3(cleaned);
+  }
+  if (cleaned.length === 2 && cleaned[0].length === 36 && cleaned[1].length === 36) {
+    return parseTD2(cleaned);
+  }
+  if (cleaned.length === 3 && cleaned.every((l) => l.length === 30)) {
+    return parseTD1(cleaned);
+  }
+
+  return {
+    valid: false,
+    docType: null,
+    reason: `Could not recognize an ICAO 9303 MRZ layout from ${cleaned.length} line(s) of length(s) ${
+      cleaned.map((l) => l.length).join(', ') || 'n/a'
+    } — expected 2 lines of 44 (TD3/passport), 2 lines of 36 (TD2), or 3 lines of 30 (TD1).`,
+    fields: [],
+    extracted: {},
+  };
+}
+
+// --- MRZ-line detection helpers for runDeterministicChecks -----------------
+
+/**
+ * Scans every extracted field's value for lines that are MRZ-shaped: pure
+ * `A-Z0-9<` (after stripping whitespace) and exactly 30, 36, or 44
+ * characters long. A field's value may itself be a multi-line block (the
+ * common case when a vision pass transcribes the whole MRZ verbatim into
+ * one field), or the MRZ may be spread across separate single-line fields
+ * (e.g. "MRZ Line 1" / "MRZ Line 2") — both are handled the same way here
+ * because we flatten every field's value into candidate lines first.
+ */
+function collectMrzCandidateLines(fields: ExtractedField[]): string[] {
+  const lines: string[] = [];
+  for (const f of fields) {
+    if (!f || typeof f.value !== 'string') continue;
+    const rawLines = f.value.split(/\r?\n/);
+    for (const raw of rawLines) {
+      const l = raw.replace(/\s+/g, '').toUpperCase();
+      if (/^[A-Z0-9<]{30}$/.test(l) || /^[A-Z0-9<]{36}$/.test(l) || /^[A-Z0-9<]{44}$/.test(l)) {
+        lines.push(l);
+      }
+    }
+  }
+  return lines;
+}
+
+/** Groups candidate MRZ lines into TD3 (2x44) / TD2 (2x36) / TD1 (3x30) runs, in order. */
+function groupMrzLines(lines: string[]): string[][] {
+  const groups: string[][] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const len = lines[i].length;
+    if ((len === 44 || len === 36) && i + 1 < lines.length && lines[i + 1].length === len) {
+      groups.push([lines[i], lines[i + 1]]);
+      i += 2;
+      continue;
+    }
+    if (len === 30 && i + 2 < lines.length && lines[i + 1].length === 30 && lines[i + 2].length === 30) {
+      groups.push([lines[i], lines[i + 1], lines[i + 2]]);
+      i += 3;
+      continue;
+    }
+    i += 1;
+  }
+  return groups;
+}
+
+// ===========================================================================
 // runDeterministicChecks
 // ===========================================================================
 
@@ -635,6 +990,29 @@ export function runDeterministicChecks(fields: ExtractedField[]): DeterministicC
     });
 
     if (!result.valid) hardFailures++;
+  }
+
+  // --- MRZ (Machine Readable Zone) check-digit validation -------------
+  const mrzGroups = groupMrzLines(collectMrzCandidateLines(safeFields));
+  for (const group of mrzGroups) {
+    const mrz = validateMRZ(group);
+    if (!mrz.docType) continue; // grouping guarantees a recognizable shape, but never invent a result
+
+    for (const fc of mrz.fields) {
+      checks.push({
+        check: `MRZ ${fc.field} check digit (${mrz.docType})`,
+        status: fc.valid ? 'PASS' : 'FAIL',
+        detail: fc.valid
+          ? `${fc.field} check digit '${fc.provided}' matches the ICAO 9303 computed value '${fc.expected}'.`
+          : `${fc.field} check digit '${fc.provided}' does NOT match the ICAO 9303 computed value '${fc.expected}' — this MRZ field fails its checksum.`,
+      });
+      signals.push({
+        label: `MRZ ${fc.field} — ${mrz.docType}`,
+        value: fc.valid ? 'Valid' : 'Invalid',
+        concern: !fc.valid,
+      });
+      if (!fc.valid) hardFailures++;
+    }
   }
 
   // --- Date-logic checks (conservative, only on unambiguous parses) ---

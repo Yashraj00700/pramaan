@@ -54,7 +54,11 @@ const REPORT_SCHEMA = {
     verdict: { type: 'string', enum: ['AUTHENTIC', 'SUSPICIOUS', 'LIKELY_FAKE'] },
     riskScore: { type: 'number', description: '0-100. Higher = more likely fraudulent/tampered.' },
     confidence: { type: 'number', description: '0-100 confidence in this assessment.' },
-    summary: { type: 'string', description: 'Plain-language 2-4 sentence explanation a non-expert clerk can act on.' },
+    summary: {
+      type: 'string',
+      description:
+        'Written for a non-expert clerk with no forensics background: plain words, no jargon. 3-5 sentences. Sentence 1 states what the document is and the verdict in plain terms. Sentence 2 names the SINGLE MOST DECISIVE piece of evidence that drove the verdict — quote the exact field/value or measurement (e.g. "the GSTIN printed on the invoice, 22AAAAA0000A1Z5, fails the official checksum" — not "there are inconsistencies"). Remaining sentences give any other material evidence and what to do next. Never write a sentence that would be equally true of a different document.',
+    },
     redFlags: {
       type: 'array',
       items: {
@@ -70,25 +74,27 @@ const REPORT_SCHEMA = {
     },
     consistencyChecks: {
       type: 'array',
-      description: 'Cross-field / cross-document / arithmetic logic tests — the specialty. Test EVERY relationship present.',
+      description:
+        'Cross-field / cross-document / arithmetic logic tests — the specialty. Test EVERY arithmetic or logical relationship actually present on this document (every total, every date pair, every ID-vs-issuer format, every stated-vs-derived value) — do not stop at one or two. "check" must name the exact fields being compared (e.g. "Line-item sum (₹42,300) vs printed Total (₹42,300)", "DOB (12/04/1998) vs stated age (26) as of issue date (03/2024)") — never a vague label like "Amount check" or "Date check". "detail" must show the actual values on both sides of the comparison and the arithmetic/logic performed, not just the verdict.',
       items: {
         type: 'object',
         properties: {
-          check: { type: 'string' },
+          check: { type: 'string', description: 'Name the exact fields compared, with their values, e.g. "Sum of 4 line items (₹18,200) vs printed Grand Total (₹18,700)".' },
           status: { type: 'string', enum: ['PASS', 'FAIL', 'WARN'] },
-          detail: { type: 'string' },
+          detail: { type: 'string', description: 'Show the actual values compared and the computation/logic, e.g. "18,200 + 18% GST (3,276) = 21,476, but the document totals 21,976 — a ₹500 unexplained discrepancy."' },
         },
         required: ['check', 'status', 'detail'],
       },
     },
     extractedFields: {
       type: 'array',
-      description: 'All key data points read from the document.',
+      description:
+        'EXHAUSTIVE: every label/value pair legible anywhere on the document — every printed field, stamp text, handwritten annotation, table row, footer/header line, and QR-decoded field — not just the "important" ones. If a field is printed but blank/illegible, still list it with value "(blank)" or "(illegible)" rather than omitting it. A short, sparse list here is treated as an incomplete extraction, not a simple document.',
       items: { type: 'object', properties: { label: { type: 'string' }, value: { type: 'string' } }, required: ['label', 'value'] },
     },
     technicalSignals: {
       type: 'array',
-      description: 'Forensic / technical observations about the artifact itself.',
+      description: 'Forensic / technical observations about the artifact itself, each tied to a specific measured or observed value (not a general statement).',
       items: { type: 'object', properties: { label: { type: 'string' }, value: { type: 'string' }, concern: { type: 'boolean' } }, required: ['label', 'value', 'concern'] },
     },
     recommendedAction: { type: 'string', description: 'Clear next step with the reason (approve, request original, verify at source, escalate, reject).' },
@@ -120,8 +126,12 @@ const REPORT_SCHEMA = {
           id: { type: 'string', description: 'The module id from the system prompt list.' },
           title: { type: 'string' },
           status: { type: 'string', enum: ['PASS', 'WARN', 'FAIL', 'INFO'] },
-          score: { type: 'number', description: '0-100 health score for this module (higher = healthier).' },
-          narrative: { type: 'string', description: '2-4 paragraphs of specific analyst reasoning citing what you actually saw.' },
+          score: { type: 'number', description: '0-100 health score for this module (higher = healthier). Must be consistent with the checks/findings in this same module — a module with a FAIL check cannot score above ~40, a module with only PASS checks and no concerns cannot score below ~80.' },
+          narrative: {
+            type: 'string',
+            description:
+              'REQUIRED PER PARAGRAPH: at least one concrete, document-specific citation per paragraph — a quoted field value actually printed on THIS document, a measured metadata value (e.g. an actual EXIF/PDF timestamp, an actual ELA mean-error number), or a specific coordinate/region ("the seal in the bottom-right, roughly at the printed date block"). FORBIDDEN: generic filler that would read the same on any document of this type — e.g. "the document appears mostly consistent with standard formatting" or "no major issues were observed" with nothing concrete attached. If you cannot verify something, say exactly what you could NOT determine and why (e.g. "the signature\'s pen-pressure cannot be assessed from a flat scan — this module is limited to layout and metadata evidence only") instead of padding the paragraph with vague reassurance. 2-4 paragraphs.',
+          },
           checks: {
             type: 'array',
             items: {
@@ -129,7 +139,7 @@ const REPORT_SCHEMA = {
               properties: {
                 category: { type: 'string' },
                 status: { type: 'string', enum: ['PASS', 'FAIL', 'WARN'] },
-                detail: { type: 'string' },
+                detail: { type: 'string', description: 'Cite the specific value/region observed, not a generic statement.' },
               },
               required: ['category', 'status', 'detail'],
             },
@@ -141,7 +151,8 @@ const REPORT_SCHEMA = {
     },
     riskBreakdown: {
       type: 'array',
-      description: 'Risk contribution per dimension (0-100, higher = riskier). Use the module areas as labels.',
+      description:
+        'Risk contribution per dimension (0-100, higher = riskier). Use the module areas as labels. Each score must be traceable to that module\'s actual findings/checks in "modules" — a dimension with no FAIL/WARN checks and no concerning findings should score low (roughly 0-20); do not assign a high score without a corresponding finding to justify it, and do not leave a module with real FAIL findings scored low.',
       items: {
         type: 'object',
         properties: { label: { type: 'string' }, score: { type: 'number' } },
@@ -197,6 +208,15 @@ const SYSTEM = `You are Pramaan, a world-class and scrupulously HONEST document-
 - ELA image: the second image (when provided) is an Error-Level Analysis heatmap of the first. In a genuine single-save photo, error levels are fairly uniform. BRIGHT / high-contrast patches that differ sharply from their surroundings — especially around text, numbers, photos, stamps or signatures — suggest that region was edited and re-saved (spliced/retouched). Treat ELA as supporting evidence, not proof: JPEG artifacts, edges and text naturally show some ELA; call out only localized anomalies that coincide with meaningful fields.
 - DECODED QR/BARCODE: if a payload was decoded, CROSS-CHECK it against the printed fields (name, number, dates, issuer). A mismatch, or an unreadable/absent QR on a document type that should carry a signed QR (e.g. many govt e-certificates, Aadhaar), is a strong signal. You cannot verify a digital signature here — note that under externalChecksNeeded.
 
+===== NO GENERIC FILLER — EVERY CLAIM MUST BE GROUNDED IN THIS DOCUMENT =====
+This is the rule that most reports violate, and it is now NON-NEGOTIABLE:
+- Every sentence in every module narrative must cite something you actually observed ON THIS SPECIFIC DOCUMENT: a quoted field value exactly as printed ("Total Amount: ₹42,300"), a measured metadata value (an actual EXIF timestamp, PDF producer string, or ELA mean-error number — not "the metadata looks fine"), or a specific coordinate/region ("the stamp overlapping the signature in the lower-right", "the second table row"). A sentence that would read equally true of any other document of this type is FORBIDDEN — delete it and replace it with something specific, or state what you could not determine (see next rule).
+- Banned phrases and their kind (do not write sentences like these): "the document appears to be in order", "no significant issues were found", "formatting is consistent with standard practice", "the document looks authentic/genuine overall" — with nothing concrete attached. If a module is genuinely clean, say so BY NAMING what you checked and what you found at each ("the printed total ₹18,700 matches 4 line items summing to ₹18,700; the PDF producer is 'Adobe Acrobat 23.1' with a creation-to-modification gap of 4 seconds, consistent with a single digital save") — a clean finding still needs its own evidence, not just an assurance.
+- WHAT YOU COULD NOT DETERMINE: for every module, explicitly state anything you could not assess and why — e.g. "pen pressure and ink flow cannot be judged from a flat scan", "no EXIF survived so capture-device provenance is unknown", "the seal's microtext is below the image's effective resolution to read". Do this INSTEAD of padding a narrative with reassurance you cannot back up. A module that honestly says "I could not verify X because Y" is worth more than one that claims certainty it doesn't have.
+- extractedFields must be EXHAUSTIVE: every label/value pair legible anywhere on the document (every printed field, every table row, stamps, handwritten notes, footers, QR-decoded fields) — not a curated subset of the "important" ones. Missing a legible field is an incomplete extraction.
+- consistencyChecks must test EVERY arithmetic or logical relation actually present on the document (not just one or two obvious ones), and each "check" must name the exact fields compared with their actual values, not a vague label.
+- riskBreakdown scores must be justified by — and traceable to — the actual findings/checks in that same module. Never assign a risk score you cannot point to a specific finding for.
+
 ===== DO A DEEP, THOROUGH ANALYSIS =====
 A) TECHNICAL/VISUAL FORENSICS: font/kerning/weight inconsistencies (esp. names, numbers, dates, totals); misaligned/baseline-shifted text; copy-paste/clone artifacts; resolution/compression/anti-alias mismatch; flat or pasted stamps/seals/signatures; template/logo/seal/layout errors; interpret the ELA map and the provided EXIF/PDF metadata.
 B) TEXT & OCR: read all fields; assess grammar/spelling/transliteration/formatting plausibility for the claimed issuer/region.
@@ -204,7 +224,7 @@ C) CROSS-FIELD & ARITHMETIC LOGIC (populate consistencyChecks richly): line item
 D) DOC-TYPE PLAYBOOKS: apply the specific document type's common forgeries (Indian caste/income/domicile certificate serials & issuing-authority conventions; marksheet grade/total arithmetic; bank-statement running-balance continuity; invoice HS codes/GST math/Incoterms; tender turnover/experience/bank-guarantee docs).
 
 ===== THE DOSSIER: produce ALL 12 MODULES, in this exact order =====
-You are writing a professional forensic dossier a government officer could act on and defend. For EVERY module below emit an entry in "modules" with a substantial 2-4 paragraph narrative (specific to THIS document — quote what you actually saw), concrete checks, and findings. Never leave a narrative thin or generic. If a module genuinely does not apply to this document type, set status INFO and explain why in the narrative.
+You are writing a professional forensic dossier a government officer could act on and defend. For EVERY module below emit an entry in "modules" with a substantial 2-4 paragraph narrative (specific to THIS document — quote exact field values, measured metadata numbers, or coordinates/regions you actually saw; forbidden: generic filler sentences that would apply to any document), concrete checks, and findings. Every module must also state what it could NOT determine and why, rather than padding with vague reassurance. Never leave a narrative thin or generic. If a module genuinely does not apply to this document type, set status INFO and explain concretely why (what about this document makes it inapplicable), not just that it doesn't apply.
 1.  id "executive"    — Executive Summary: what the document is, who it concerns, the verdict and the two or three findings that drove it.
 2.  id "forensics"    — Document Forensics: ELA interpretation, compression/noise/resolution consistency, clone or splice artifacts, metadata (EXIF/PDF producer, creation-vs-modification), scan vs digital origin.
 3.  id "typography"   — Typography & Layout: fonts, weights, kerning, baseline alignment, spacing, margins, template/logo fidelity; text that was re-typed or pasted over.
@@ -220,8 +240,10 @@ You are writing a professional forensic dossier a government officer could act o
 Also populate: riskBreakdown (risk 0-100 per module area), timeline (every date on the document with consistency), fraudTypology, issuerIntel, and missingDocuments.
 
 ===== OUTPUT =====
-- Many, specific extractedFields and consistencyChecks; concrete redFlags each with real evidence; technicalSignals with concern flags.
+- extractedFields must be exhaustive (every legible label/value pair on the document); consistencyChecks must exercise every arithmetic/logical relation actually present and name the exact fields+values compared; concrete redFlags each with real evidence quoted from the document; technicalSignals tied to specific measured/observed values with concern flags.
 - visualMarkers: bounding boxes ONLY for raster images (empty for PDFs), on the ORIGINAL document coordinates.
+- riskBreakdown: every score must be justified by a specific finding/check in the matching module — never assign risk you cannot point to evidence for.
+- summary: written for a non-expert clerk, plain language, and must explicitly name the single most decisive piece of evidence behind the verdict (quote the exact value/field/measurement) — not a vague characterization.
 - Calibrate honestly: a clean, ordinary, internally-consistent document earns a LOW riskScore and AUTHENTIC — do not manufacture fraud without concrete evidence, and cite the evidence when you flag it. Real doubt without proof => SUSPICIOUS. Bands: 0-33 AUTHENTIC, 34-66 SUSPICIOUS, 67-100 LIKELY_FAKE.
 
 Return your complete analysis by calling the submit_report tool exactly once. No prose outside the tool call.`;

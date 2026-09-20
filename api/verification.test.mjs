@@ -20,6 +20,7 @@ import {
   validateUPI,
   validateIndianMobile,
   validatePIN,
+  validateMRZ,
   runDeterministicChecks,
 } from './verification.ts';
 
@@ -333,4 +334,257 @@ test('runDeterministicChecks: multiple identifiers accumulate hardFailures corre
   ]);
   assert.equal(result.checks.length, 4);
   assert.equal(result.hardFailures, 2);
+});
+
+// ---------------------------------------------------------------------------
+// validateMRZ (ICAO 9303 Machine Readable Zone)
+// ---------------------------------------------------------------------------
+//
+// TD3 (passport) good vectors below are the well-known ICAO Doc 9303 worked
+// example (Anna Maria Eriksson, fictional issuing state "UTO"). Every check
+// digit was independently recomputed with the 7-3-1 weighted mod-10
+// algorithm before being hard-coded here and matches the published example:
+//   document number L898902C3  -> check digit 6
+//   date of birth    740812    -> check digit 2
+//   date of expiry   120415    -> check digit 9
+//   personal number  ZE184226B<<<<< -> check digit 1
+//   composite (doc#+check + dob+check + expiry+check + personal#+check) -> check digit 0
+//
+// TD1 good vectors are a synthetic-but-independently-derived document
+// (same DOB/expiry digits as the TD3 example, reused because their check
+// digits — 2 and 9 — were already hand-verified above): document number
+// D23145890 -> check digit 7; composite over doc#+check + 15 chars optional
+// data + dob+check + expiry+check + 11 chars optional data -> check digit 6.
+
+const TD3_LINE1_GOOD = 'P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<';
+const TD3_LINE2_GOOD = 'L898902C36UTO7408122F1204159ZE184226B<<<<<10';
+
+const TD1_LINE1_GOOD = 'IDUTOD231458907<<<<<<<<<<<<<<<';
+const TD1_LINE2_GOOD = '7408122F1204159UTO<<<<<<<<<<<6';
+const TD1_LINE3_GOOD = 'ERIKSSON<<ANNA<MARIA<<<<<<<<<<';
+
+test('validateMRZ: TD3 (passport) — all check digits pass on the ICAO worked example', () => {
+  const r = validateMRZ([TD3_LINE1_GOOD, TD3_LINE2_GOOD]);
+  assert.equal(r.docType, 'TD3');
+  assert.equal(r.valid, true);
+  assert.equal(r.fields.length, 5);
+  for (const f of r.fields) {
+    assert.equal(f.valid, true, `expected ${f.field} to pass, got expected=${f.expected} provided=${f.provided}`);
+  }
+  assert.equal(r.extracted.documentNumber, 'L898902C3');
+  assert.equal(r.extracted.dateOfBirth, '740812');
+  assert.equal(r.extracted.dateOfExpiry, '120415');
+  assert.equal(r.extracted.nationality, 'UTO');
+  assert.equal(r.extracted.sex, 'F');
+  assert.equal(r.extracted.surname, 'ERIKSSON');
+  assert.equal(r.extracted.givenNames, 'ANNA MARIA');
+  assert.equal(r.extracted.personalNumber, 'ZE184226B');
+});
+
+test('validateMRZ: TD3 — a corrupted composite check digit fails only the composite field', () => {
+  // Last character (composite check digit) 0 -> 1; every other printed
+  // check digit is untouched and still mathematically correct.
+  const corrupted = TD3_LINE2_GOOD.slice(0, 43) + '1';
+  const r = validateMRZ([TD3_LINE1_GOOD, corrupted]);
+  assert.equal(r.docType, 'TD3');
+  assert.equal(r.valid, false);
+  const composite = r.fields.find((f) => f.field === 'Composite');
+  assert.equal(composite.valid, false);
+  const others = r.fields.filter((f) => f.field !== 'Composite');
+  for (const f of others) assert.equal(f.valid, true, `expected ${f.field} to still pass`);
+});
+
+test('validateMRZ: TD3 — a corrupted document-number check digit fails that field (and cascades to the composite)', () => {
+  // Document-number check digit (position 9) 6 -> 7. Because the composite
+  // is computed over the literal printed check-digit character, corrupting
+  // one field's check digit also breaks the composite — this is intended
+  // ICAO 9303 behaviour (the composite is a redundant cross-check).
+  const corrupted = TD3_LINE2_GOOD.slice(0, 9) + '7' + TD3_LINE2_GOOD.slice(10);
+  const r = validateMRZ([TD3_LINE1_GOOD, corrupted]);
+  assert.equal(r.valid, false);
+  const docNum = r.fields.find((f) => f.field === 'Document number');
+  const composite = r.fields.find((f) => f.field === 'Composite');
+  assert.equal(docNum.valid, false);
+  assert.equal(composite.valid, false);
+  const dob = r.fields.find((f) => f.field === 'Date of birth');
+  const expiry = r.fields.find((f) => f.field === 'Date of expiry');
+  assert.equal(dob.valid, true);
+  assert.equal(expiry.valid, true);
+});
+
+test('validateMRZ: TD3 — corrupted date-of-birth check digit fails that field', () => {
+  // DOB check digit (position 19) 2 -> 3.
+  const corrupted = TD3_LINE2_GOOD.slice(0, 19) + '3' + TD3_LINE2_GOOD.slice(20);
+  const r = validateMRZ([TD3_LINE1_GOOD, corrupted]);
+  assert.equal(r.valid, false);
+  const dob = r.fields.find((f) => f.field === 'Date of birth');
+  assert.equal(dob.valid, false);
+});
+
+test('validateMRZ: TD3 — an all-filler personal number is treated as blank, and its check digit may be printed as either "0" or "<"', () => {
+  const line2WithZero = 'L898902C36UTO7408122F1204159<<<<<<<<<<<<<<08';
+  const r0 = validateMRZ([TD3_LINE1_GOOD, line2WithZero]);
+  const personal0 = r0.fields.find((f) => f.field.startsWith('Personal number'));
+  assert.equal(personal0.present, false);
+  assert.equal(personal0.valid, true);
+  assert.equal(r0.valid, true);
+
+  const line2WithFiller = 'L898902C36UTO7408122F1204159<<<<<<<<<<<<<<<8';
+  const rFiller = validateMRZ([TD3_LINE1_GOOD, line2WithFiller]);
+  const personalFiller = rFiller.fields.find((f) => f.field.startsWith('Personal number'));
+  assert.equal(personalFiller.present, false);
+  assert.equal(personalFiller.valid, true);
+  assert.equal(rFiller.valid, true);
+});
+
+test('validateMRZ: TD1 (ID card) — all check digits pass on a derived-and-verified vector', () => {
+  const r = validateMRZ([TD1_LINE1_GOOD, TD1_LINE2_GOOD, TD1_LINE3_GOOD]);
+  assert.equal(r.docType, 'TD1');
+  assert.equal(r.valid, true);
+  assert.equal(r.fields.length, 4);
+  for (const f of r.fields) {
+    assert.equal(f.valid, true, `expected ${f.field} to pass, got expected=${f.expected} provided=${f.provided}`);
+  }
+  assert.equal(r.extracted.documentNumber, 'D23145890');
+  assert.equal(r.extracted.dateOfBirth, '740812');
+  assert.equal(r.extracted.dateOfExpiry, '120415');
+  assert.equal(r.extracted.nationality, 'UTO');
+  assert.equal(r.extracted.surname, 'ERIKSSON');
+  assert.equal(r.extracted.givenNames, 'ANNA MARIA');
+});
+
+test('validateMRZ: TD1 — a corrupted composite check digit fails only the composite field', () => {
+  // Composite check digit (last character of line 2) 6 -> 7.
+  const corrupted = TD1_LINE2_GOOD.slice(0, 29) + '7';
+  const r = validateMRZ([TD1_LINE1_GOOD, corrupted, TD1_LINE3_GOOD]);
+  assert.equal(r.valid, false);
+  const composite = r.fields.find((f) => f.field === 'Composite');
+  assert.equal(composite.valid, false);
+  const others = r.fields.filter((f) => f.field !== 'Composite');
+  for (const f of others) assert.equal(f.valid, true, `expected ${f.field} to still pass`);
+});
+
+test('validateMRZ: TD1 — corrupted document-number check digit fails that field (and cascades to the composite)', () => {
+  // Document-number check digit (line 1, position 14) 7 -> 8.
+  const corrupted = TD1_LINE1_GOOD.slice(0, 14) + '8' + TD1_LINE1_GOOD.slice(15);
+  const r = validateMRZ([corrupted, TD1_LINE2_GOOD, TD1_LINE3_GOOD]);
+  assert.equal(r.valid, false);
+  const docNum = r.fields.find((f) => f.field === 'Document number');
+  const composite = r.fields.find((f) => f.field === 'Composite');
+  assert.equal(docNum.valid, false);
+  assert.equal(composite.valid, false);
+});
+
+test('validateMRZ: TD1 — corrupted date-of-expiry check digit fails that field', () => {
+  // Expiry check digit (line 2, position 14) 9 -> 0.
+  const corrupted = TD1_LINE2_GOOD.slice(0, 14) + '0' + TD1_LINE2_GOOD.slice(15);
+  const r = validateMRZ([TD1_LINE1_GOOD, corrupted, TD1_LINE3_GOOD]);
+  assert.equal(r.valid, false);
+  const expiry = r.fields.find((f) => f.field === 'Date of expiry');
+  assert.equal(expiry.valid, false);
+});
+
+test('validateMRZ: TD2 — all check digits pass on a derived-and-verified vector', () => {
+  const line1 = 'IDUTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<';
+  const line2 = 'D231458907UTO7408122F1204159<<<<<<<6';
+  const r = validateMRZ([line1, line2]);
+  assert.equal(r.docType, 'TD2');
+  assert.equal(r.valid, true);
+  assert.equal(r.fields.length, 4);
+  for (const f of r.fields) assert.equal(f.valid, true, `expected ${f.field} to pass`);
+});
+
+test('validateMRZ: TD2 — a corrupted composite check digit fails only the composite field', () => {
+  const line1 = 'IDUTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<';
+  const line2Corrupted = 'D231458907UTO7408122F1204159<<<<<<<7'; // composite 6 -> 7
+  const r = validateMRZ([line1, line2Corrupted]);
+  assert.equal(r.valid, false);
+  const composite = r.fields.find((f) => f.field === 'Composite');
+  assert.equal(composite.valid, false);
+});
+
+test('validateMRZ: rejects an unrecognized line-count/length combination without guessing', () => {
+  const r = validateMRZ(['TOO', 'SHORT']);
+  assert.equal(r.docType, null);
+  assert.equal(r.valid, false);
+  assert.match(r.reason, /Could not recognize/);
+  assert.deepEqual(r.fields, []);
+});
+
+test('validateMRZ: rejects lines containing characters outside A-Z0-9<', () => {
+  const badLine1 = TD3_LINE1_GOOD.slice(0, 10) + '@' + TD3_LINE1_GOOD.slice(11);
+  const r = validateMRZ([badLine1, TD3_LINE2_GOOD]);
+  assert.equal(r.docType, null);
+  assert.equal(r.valid, false);
+  assert.match(r.reason, /outside A-Z, 0-9/);
+});
+
+test('validateMRZ: normalizes whitespace and lowercase input before layout detection', () => {
+  const spaced1 = TD3_LINE1_GOOD.split('').join(' ').toLowerCase();
+  const spaced2 = TD3_LINE2_GOOD.split('').join(' ').toLowerCase();
+  const r = validateMRZ([spaced1, spaced2]);
+  assert.equal(r.docType, 'TD3');
+  assert.equal(r.valid, true);
+});
+
+// ---------------------------------------------------------------------------
+// runDeterministicChecks — MRZ integration
+// ---------------------------------------------------------------------------
+
+test('runDeterministicChecks: validates a TD3 MRZ transcribed as one multi-line field and emits PASS checks', () => {
+  const result = runDeterministicChecks([
+    { label: 'MRZ', value: `${TD3_LINE1_GOOD}\n${TD3_LINE2_GOOD}` },
+  ]);
+  const mrzChecks = result.checks.filter((c) => c.check.startsWith('MRZ '));
+  assert.equal(mrzChecks.length, 5);
+  assert.ok(mrzChecks.every((c) => c.status === 'PASS'));
+  assert.equal(result.hardFailures, 0);
+});
+
+test('runDeterministicChecks: validates a TD3 MRZ split across two separate fields', () => {
+  const result = runDeterministicChecks([
+    { label: 'MRZ Line 1', value: TD3_LINE1_GOOD },
+    { label: 'MRZ Line 2', value: TD3_LINE2_GOOD },
+  ]);
+  const mrzChecks = result.checks.filter((c) => c.check.startsWith('MRZ '));
+  assert.equal(mrzChecks.length, 5);
+  assert.ok(mrzChecks.every((c) => c.status === 'PASS'));
+});
+
+test('runDeterministicChecks: a corrupted MRZ composite check digit counts as a hard failure', () => {
+  const corruptedLine2 = TD3_LINE2_GOOD.slice(0, 43) + '1';
+  const result = runDeterministicChecks([
+    { label: 'MRZ', value: `${TD3_LINE1_GOOD}\n${corruptedLine2}` },
+  ]);
+  const compositeCheck = result.checks.find((c) => c.check === 'MRZ Composite check digit (TD3)');
+  assert.ok(compositeCheck, 'expected an MRZ composite check row');
+  assert.equal(compositeCheck.status, 'FAIL');
+  assert.equal(result.hardFailures, 1);
+});
+
+test('runDeterministicChecks: validates a TD1 MRZ (3 lines) transcribed as one multi-line field', () => {
+  const result = runDeterministicChecks([
+    { label: 'MRZ', value: `${TD1_LINE1_GOOD}\n${TD1_LINE2_GOOD}\n${TD1_LINE3_GOOD}` },
+  ]);
+  const mrzChecks = result.checks.filter((c) => c.check.startsWith('MRZ '));
+  assert.equal(mrzChecks.length, 4);
+  assert.ok(mrzChecks.every((c) => c.status === 'PASS'));
+  assert.equal(result.hardFailures, 0);
+});
+
+test('runDeterministicChecks: MRZ checks combine with identifier and date-logic hardFailures', () => {
+  const corruptedLine2 = TD3_LINE2_GOOD.slice(0, 43) + '1'; // MRZ composite fails -> +1
+  const result = runDeterministicChecks([
+    { label: 'MRZ', value: `${TD3_LINE1_GOOD}\n${corruptedLine2}` },
+    { label: 'Aadhaar No.', value: '435231857228' }, // invalid -> +1
+  ]);
+  assert.equal(result.hardFailures, 2);
+});
+
+test('runDeterministicChecks: plain non-MRZ text of coincidental length does not trigger MRZ validation', () => {
+  const result = runDeterministicChecks([
+    { label: 'Notes', value: 'This is just a regular sentence of no particular significance at all!!' },
+  ]);
+  const mrzChecks = result.checks.filter((c) => c.check.startsWith('MRZ '));
+  assert.equal(mrzChecks.length, 0);
 });

@@ -1,0 +1,271 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<title>Pramaan — Explainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+ @page { size: A4; margin: 14mm 13mm; }
+ *{box-sizing:border-box}
+ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#0F172A;margin:0;font-size:10.2pt;line-height:1.55}
+ h1,h2,h3,.d{font-family:'Outfit','Plus Jakarta Sans',sans-serif;letter-spacing:-.02em}
+ .page{page-break-after:always;padding-top:2mm}
+ .page:last-child{page-break-after:auto}
+ h2{font-size:19pt;font-weight:800;margin:0 0 3mm;color:#0F172A}
+ h3{font-size:12pt;font-weight:700;margin:6mm 0 2mm;color:#1E40AF}
+ p{margin:0 0 3mm}
+ .eyebrow{font-size:8pt;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#2563EB;margin-bottom:2mm}
+ .lead{font-size:11.5pt;color:#334155}
+ .muted{color:#475569}
+ .small{font-size:8.6pt;color:#64748B}
+ .card{border:1px solid #E2E8F0;border-radius:10px;padding:4mm 5mm;background:#fff;margin:0 0 3mm}
+ .tint{background:#F5F8FF;border-color:#DBEAFE}
+ .grid2{display:grid;grid-template-columns:1fr 1fr;gap:3mm}
+ .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3mm}
+ .stat{border:1px solid #E2E8F0;border-radius:10px;padding:4mm;background:#fff}
+ .stat .n{font-family:'Outfit';font-size:17pt;font-weight:900;color:#1E40AF;line-height:1.1}
+ .stat .l{font-size:8.4pt;color:#475569;margin-top:1.5mm}
+ ul{margin:0 0 3mm;padding-left:5mm}
+ li{margin-bottom:1.6mm}
+ .warn{border-left:3px solid #F59E0B;background:#FFFBEB;padding:3mm 4mm;border-radius:0 8px 8px 0;margin-bottom:3mm}
+ .good{border-left:3px solid #10B981;background:#ECFDF5;padding:3mm 4mm;border-radius:0 8px 8px 0;margin-bottom:3mm}
+ .bad{border-left:3px solid #EF4444;background:#FEF2F2;padding:3mm 4mm;border-radius:0 8px 8px 0;margin-bottom:3mm}
+ code,.mono{font-family:ui-monospace,Menlo,monospace;font-size:8.6pt;background:#F1F5F9;padding:.5mm 1.2mm;border-radius:3px}
+ table{width:100%;border-collapse:collapse;font-size:9pt}
+ th,td{text-align:left;padding:2.2mm 2mm;border-bottom:1px solid #E2E8F0;vertical-align:top}
+ th{font-size:8pt;text-transform:uppercase;letter-spacing:.08em;color:#475569}
+ .src{font-size:7.6pt;color:#64748B;word-break:break-all}
+ .cover{height:252mm;display:flex;flex-direction:column;justify-content:center}
+ .badge{display:inline-block;font-size:8pt;font-weight:700;padding:1mm 2.5mm;border-radius:999px;border:1px solid}
+ .b-red{background:#FEF2F2;border-color:#FECACA;color:#B91C1C}
+ .b-amb{background:#FFFBEB;border-color:#FDE68A;color:#B45309}
+ .b-grn{background:#ECFDF5;border-color:#A7F3D0;color:#047857}
+ .foot{position:running(f)}
+</style></head><body>
+
+<!-- COVER -->
+<section class="page cover">
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><path d="M32 5l20 8v15c0 12-8.4 21.2-20 26C20.4 49.2 12 40 12 28V13l20-8z" fill="#2563EB"/><path d="M24 31.5l6 6 12-13" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <h1 class="d" style="font-size:44pt;font-weight:900;margin:6mm 0 2mm;line-height:1.02">Pramaan</h1>
+  <p class="d" style="font-size:16pt;font-weight:700;color:#1E40AF;margin:0 0 4mm">Proving a document is real — in seconds.</p>
+  <p class="lead" style="max-width:135mm">An AI document-authenticity and fraud-detection system for government schemes,
+  built so that its conclusions can be defended: mathematics decides what mathematics can decide, and the
+  system says plainly what it could not verify.</p>
+  <div style="margin-top:8mm" class="grid3">
+    <div class="stat"><div class="n">12</div><div class="l">forensic modules per document</div></div>
+    <div class="stat"><div class="n">40/40</div><div class="l">checksum validator tests passing</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">fabricated external lookups</div></div>
+  </div>
+  <p class="small" style="margin-top:8mm">Submitted for hackathon evaluation · Repository: github.com/Yashraj00700/pramaan</p>
+</section>
+
+<!-- STORY -->
+<section class="page">
+  <div class="eyebrow">Why we built this</div>
+  <h2>A real person, a real scheme, a fake piece of paper</h2>
+  <p class="lead">Most welfare fraud in India is not a stolen identity. It is a real, unique person — correctly
+  Aadhaar-authenticated — submitting a document that says something untrue about them.</p>
+  <p>India already solved a large part of the identity problem. Direct Benefit Transfer removed ghost and duplicate
+  beneficiaries at enormous scale. But Aadhaar proves <em>who you are</em>. It does not prove that the income
+  certificate in your file says your real income, that the caste certificate was issued by the officer whose seal it
+  carries, or that the bank guarantee backing a tender is real.</p>
+  <p>That second gap is still checked the way it was checked decades ago: a clerk looks at the paper. One officer,
+  hundreds of applications, no forensic tooling, no time. A competent forgery passes. An honest applicant with an
+  unusual-looking document sometimes gets rejected. Both failures are invisible, because nobody records them.</p>
+  <div class="card tint">
+    <strong>The specific thing we set out to build:</strong> put a forensic examiner behind every counter — one that
+    reads the document, checks the arithmetic, validates the identifiers against their real checksum rules, argues
+    with itself about the evidence, and then tells the officer exactly what it found and exactly what it could not
+    confirm.
+  </div>
+  <h3>Why Madhya Pradesh is the sharpest case</h3>
+  <p>MP carries a documented institutional memory of exactly this failure mode. The Vyapam scandal turned document and
+  examination fraud into a decade-long investigation. More recently, a ₹202 crore fake bank-guarantee case in the MP
+  Jal Nigam pipeline showed the same weakness on the procurement side: forged instruments accepted because nobody could
+  verify them at the counter.</p>
+</section>
+
+<!-- DATA -->
+<section class="page">
+  <div class="eyebrow">The problem, in government's own numbers</div>
+  <h2>Leakage is measured, acknowledged, and funded against</h2>
+  <div class="grid2">
+    <div class="stat"><div class="n">₹3.48 lakh crore</div><div class="l">cumulative DBT savings from removing leakage (Union IT Minister)</div></div>
+    <div class="stat"><div class="n">5.2 crore</div><div class="l">fake ration cards purged during that exercise</div></div>
+    <div class="stat"><div class="n">830 of 1,572</div><div class="l">reviewed minority institutions found fake or inactive (₹144.83 cr)</div></div>
+    <div class="stat"><div class="n">463 of 474</div><div class="l">claimed beneficiaries fake in one Kashmir scheme audit</div></div>
+  </div>
+  <div class="warn">
+    <strong>We are deliberately not overclaiming this number.</strong> The bulk of DBT's savings came from Aadhaar-based
+    <em>identity</em> deduplication — removing ghost and duplicate people — not from document-level forensics. Pramaan
+    targets the complementary failure: the document is fabricated or altered even though the applicant is a real,
+    unique person. We cite DBT to establish that leakage at this scale is real and government-acknowledged, not to
+    claim Pramaan would capture the same ₹3.48 lakh crore.
+  </div>
+  <h3>The document-fraud pattern, case by case</h3>
+  <table>
+    <tr><th>Case</th><th>Scale</th><th>Document that failed</th></tr>
+    <tr><td>MP Jal Nigam procurement</td><td>₹202 crore</td><td>Forged bank guarantees accepted as security</td></tr>
+    <tr><td>Kolkata-syndicate guarantee racket</td><td>₹183 crore</td><td>Fake bank-guarantee instruments</td></tr>
+    <tr><td>Himachal scholarship scam</td><td>₹181 crore (2013–17)</td><td>Fabricated enrolment / institution records</td></tr>
+    <tr><td>Minority scholarship audit</td><td>₹144.83 crore</td><td>Fake institutions and beneficiary documents</td></tr>
+    <tr><td>Ahmedabad GST ITC scam (Dec 2025)</td><td>₹1,500 crore</td><td>Fake invoices</td></tr>
+  </table>
+  <div class="card">
+    <strong>What we can honestly say:</strong> no consolidated public figure exists for "₹X crore lost to fake documents
+    in MP welfare schemes per year" — we looked, and we will not invent one. What the record does establish is that
+    (1) document and eligibility fraud is large enough that the union government funded a multi-lakh-crore programme
+    against one slice of it, (2) MP has open, acknowledged fraud in exactly the pipelines we target, and
+    (3) scholarship fraud in the 25–30% range is documented at national scale.
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="page">
+  <div class="eyebrow">How it works</div>
+  <h2>Deterministic facts first, AI reasoning second</h2>
+  <p class="lead">The order matters. Anything a computer can prove, a computer proves — and the AI is not allowed to
+  argue with it.</p>
+  <svg width="100%" viewBox="0 0 700 150" style="margin:3mm 0">
+    <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l7 4-7 4z" fill="#94A3B8"/></marker></defs>
+    <rect x="2" y="42" width="120" height="62" rx="9" fill="#EFF6FF" stroke="#2563EB"/>
+    <text x="62" y="66" text-anchor="middle" font-size="11" font-weight="700" fill="#1E40AF">Upload</text>
+    <text x="62" y="82" text-anchor="middle" font-size="9" fill="#475569">image or PDF</text>
+    <line x1="124" y1="73" x2="158" y2="73" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#a)"/>
+    <rect x="160" y="16" width="160" height="114" rx="9" fill="#fff" stroke="#E2E8F0"/>
+    <text x="240" y="36" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0F172A">Deterministic layer</text>
+    <text x="240" y="54" text-anchor="middle" font-size="8.5" fill="#475569">SHA-256 · PDF producer</text>
+    <text x="240" y="68" text-anchor="middle" font-size="8.5" fill="#475569">creation vs modification</text>
+    <text x="240" y="82" text-anchor="middle" font-size="8.5" fill="#475569">EXIF editor tags · ELA</text>
+    <text x="240" y="96" text-anchor="middle" font-size="8.5" fill="#475569">QR decode</text>
+    <text x="240" y="114" text-anchor="middle" font-size="8.5" font-weight="700" fill="#047857">checksums · OFAC</text>
+    <line x1="322" y1="73" x2="356" y2="73" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#a)"/>
+    <rect x="358" y="16" width="160" height="114" rx="9" fill="#fff" stroke="#E2E8F0"/>
+    <text x="438" y="36" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0F172A">Claude Opus</text>
+    <text x="438" y="54" text-anchor="middle" font-size="8.5" fill="#475569">reads the document</text>
+    <text x="438" y="68" text-anchor="middle" font-size="8.5" fill="#475569">typography · layout</text>
+    <text x="438" y="82" text-anchor="middle" font-size="8.5" fill="#475569">cross-field logic</text>
+    <text x="438" y="96" text-anchor="middle" font-size="8.5" fill="#475569">12-module dossier</text>
+    <line x1="520" y1="73" x2="554" y2="73" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#a)"/>
+    <rect x="556" y="30" width="142" height="86" rx="9" fill="#F5F8FF" stroke="#2563EB"/>
+    <text x="627" y="54" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1E40AF">Adversarial court</text>
+    <text x="627" y="72" text-anchor="middle" font-size="8.5" fill="#475569">prosecution vs defence</text>
+    <text x="627" y="86" text-anchor="middle" font-size="8.5" fill="#475569">judge rules</text>
+    <text x="627" y="104" text-anchor="middle" font-size="8.5" font-weight="700" fill="#0F172A">verdict + evidence</text>
+  </svg>
+  <h3>The part most tools get wrong</h3>
+  <p>It is trivial to ask a language model "is this document fake?" and print whatever it says. It will confidently
+  report WHOIS records it never fetched and sanctions hits it never checked. That output is worthless to an officer who
+  may have to defend a rejection.</p>
+  <div class="good"><strong>Our rule:</strong> the model may only reason from (a) what is visibly on the document,
+  (b) facts computed in code, and (c) searches it actually performed. Anything else is written into a
+  <code>externalChecksNeeded</code> list — flagged for a human, never invented.</div>
+</section>
+
+<!-- COURT -->
+<section class="page">
+  <div class="eyebrow">The adversarial court</div>
+  <h2>Two arguments, one adjudicator, binding evidence</h2>
+  <p class="lead">A single AI pass tends to either cry fraud at every compression artifact, or wave everything through.
+  We made it argue with itself instead.</p>
+  <div class="grid2">
+    <div class="card" style="background:#FEF2F2;border-color:#FECACA">
+      <strong style="color:#B91C1C">Prosecution</strong>
+      <p class="small" style="margin-top:2mm">Builds the strongest honest case that the document is forged, citing only
+      observable evidence: baseline drift on a re-typed figure, a serial that does not match the issuer's format,
+      an income that contradicts the balance shown.</p>
+    </div>
+    <div class="card" style="background:#ECFDF5;border-color:#A7F3D0">
+      <strong style="color:#047857">Defence</strong>
+      <p class="small" style="margin-top:2mm">Gives the innocent explanation for each indicator — scanner artifacts,
+      JPEG recompression, a legitimate re-save, a template revision — and points out where the prosecution overreaches.</p>
+    </div>
+  </div>
+  <div class="card"><strong>The judge</strong> weighs both against the code-computed facts, which are <em>binding</em>.
+  A failed checksum cannot be argued away. An OFAC list that failed to download cannot be spun into "clean". The ruling
+  records what was <strong>decisive</strong> and, critically, what it <strong>dismissed</strong> — that dismissal list is
+  the false-positive guard, and it is shown to the officer.</p></div>
+  <h3>Why this matters for a government deployment</h3>
+  <p>A rejection that cannot be explained is a rejection that gets challenged. Every Pramaan verdict ships with the
+  reasoning chain, the evidence quoted from the document, the arguments that were rejected and why, and an explicit
+  list of what still requires verification at source.</p>
+</section>
+
+<!-- PROOF -->
+<section class="page">
+  <div class="eyebrow">Proof</div>
+  <h2>What we actually tested, and what we refuse to claim</h2>
+  <h3>Verified</h3>
+  <table>
+    <tr><th>Claim</th><th>Evidence</th></tr>
+    <tr><td>Identifier validation is real mathematics</td><td><span class="mono">40/40</span> unit tests pass — Aadhaar (Verhoeff), PAN structure + entity code, GSTIN mod-36, IFSC, IBAN mod-97</td></tr>
+    <tr><td>Forensic pipeline runs without an API key</td><td><span class="mono">npm run selftest</span> → 5/5 pass, no key required</td></tr>
+    <tr><td>ELA responds to real pixel edits</td><td>mean error moved <span class="mono">0.196 → 0.264</span> when a splice was introduced</td></tr>
+    <tr><td>Watchlist screening is live, not mocked</td><td>screened against the real OFAC SDN export — <span class="mono">19,393</span> records parsed</td></tr>
+  </table>
+  <h3>Honest limitations</h3>
+  <div class="bad">
+    <strong>Error-Level Analysis is weak on flat, vector-rendered documents.</strong> ELA was designed for photographs.
+    On a crisp certificate, ordinary body text produces as much error as a spliced region. On our own tampered specimen
+    the edited serial rose from ≈1.7 to ≈4.1 but did not cleanly separate from normal text. We therefore treat ELA as
+    one weak indicative signal, never as a verdict — and we say so in the report rather than letting it look decisive.
+  </div>
+  <ul>
+    <li><strong>No signature or seal verification yet.</strong> That needs a vision model behind a separate service; the
+    public reference implementations are <span class="mono">license: null</span> or AGPL and cannot be used.</li>
+    <li><strong>No source-of-truth verification yet.</strong> Until DigiLocker / e-District integration, Pramaan can say a
+    certificate is internally consistent and structurally valid — not that the issuing office actually issued it.</li>
+    <li><strong>Confidence is self-reported</strong> by the model, not calibrated against a labelled dataset.</li>
+  </ul>
+  <p class="small">Every one of these appears in the product's own reports, not just this document.</p>
+</section>
+
+<!-- GOV FIT -->
+<section class="page">
+  <div class="eyebrow">Government fit</div>
+  <h2>What we can connect to, and what that costs</h2>
+  <table>
+    <tr><th>Source</th><th>What it proves</th><th>Reality</th></tr>
+    <tr><td>Aadhaar offline QR / XML</td><td>Signed identity data, verified against UIDAI's public key</td><td><span class="badge b-grn">Buildable now</span> fully offline, no API</td></tr>
+    <tr><td>OFAC / UN / EU lists</td><td>Watchlist screening</td><td><span class="badge b-grn">Live today</span> free official downloads</td></tr>
+    <tr><td>ICAO 9303 MRZ</td><td>Passport/ID check digits</td><td><span class="badge b-grn">Pure arithmetic</span> no ML needed</td></tr>
+    <tr><td>PAN / GSTIN / MCA / IEC</td><td>Registry existence and status</td><td><span class="badge b-amb">Paid aggregator</span> self-serve, same-day</td></tr>
+    <tr><td>DigiLocker / e-District</td><td><strong>The real proof</strong> — did this office issue this certificate?</td><td><span class="badge b-red">Needs partnership</span> weeks, not hours</td></tr>
+  </table>
+  <div class="card tint"><strong>The honest sequencing:</strong> the checks that need no permission ship first and already
+  carry real weight. DigiLocker is the endgame — it converts Pramaan from "this document is internally sound" to
+  "this document was issued by that office" — and it needs a government sponsor, which is precisely what a department
+  pilot would unlock.</div>
+  <h3>Where it fits operationally</h3>
+  <ul>
+    <li><strong>Counter-level triage:</strong> the clerk uploads, gets a verdict and a reason, and escalates only what is flagged.</li>
+    <li><strong>Audit trail:</strong> every verdict stores its evidence, so a rejection can be defended and a mistake can be reviewed.</li>
+    <li><strong>Officer stays in charge:</strong> Pramaan recommends; it does not auto-reject. Fraud decisions remain human.</li>
+  </ul>
+</section>
+
+<!-- ROADMAP -->
+<section class="page">
+  <div class="eyebrow">What comes next</div>
+  <h2>Roadmap, in order of honest value</h2>
+  <table>
+    <tr><th>Next</th><th>Why it earns its place</th></tr>
+    <tr><td>ICAO 9303 MRZ check digits</td><td>Pure arithmetic on data the model already transcribes — provable ID validation for passports and ID cards, zero new dependencies</td></tr>
+    <tr><td>PDF xref / incremental-update analysis</td><td>Detects whether page content was modified in a later save — catches PDF-certificate forgery far better than metadata alone</td></tr>
+    <tr><td>JPEG quantisation-table + ghost analysis</td><td>The technique that actually works where ELA is weak; buildable in Node</td></tr>
+    <tr><td>Aadhaar offline-QR signature verification</td><td>Cryptographic proof of identity data, entirely offline</td></tr>
+    <tr><td>DigiLocker / e-District issuer verification</td><td>Turns "consistent" into "issued" — the decisive check</td></tr>
+    <tr><td>Signature &amp; seal verification service</td><td>Requires a separate Python/ONNX service; licensing rules out the public SDKs</td></tr>
+  </table>
+  <h3>The ask</h3>
+  <p>A pilot on one scheme, in one department, with real submitted documents and an officer in the loop. That produces
+  the two things we cannot generate ourselves: a labelled dataset to calibrate confidence against, and the sponsorship
+  needed for DigiLocker issuer verification.</p>
+  <div class="card">
+    <strong>What we would measure in a pilot:</strong> fraudulent documents caught that manual review missed; false
+    positives (honest applicants wrongly flagged — the number most systems hide); officer time per application; and
+    turnaround from submission to decision.
+  </div>
+  <p class="small" style="margin-top:10mm">Sources: Akashvani/News&nbsp;on&nbsp;Air and DBT Bharat (DBT savings and purge figures);
+  Deccan Herald (Himachal scholarship); Angel One / The420.in (fake bank-guarantee cases and Vyapam sentencing);
+  DeshGujarat (Ahmedabad GST ITC). Full citations with URLs in the repository under <span class="mono">docs/</span>.</p>
+</section>
+
+</body></html>
