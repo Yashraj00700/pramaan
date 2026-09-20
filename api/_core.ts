@@ -23,9 +23,9 @@ import { PDFDocument } from 'pdf-lib';
 import exifr from 'exifr';
 import sharp from 'sharp';
 import jsQR from 'jsqr';
-import { runDeterministicChecks } from './verification';
-import { screenNames } from './sanctions';
-import { runCourt } from './court';
+import { runDeterministicChecks } from './verification.js';
+import { screenNames } from './sanctions.js';
+import { runCourt } from './court.js';
 
 const MODEL = 'claude-opus-5';
 

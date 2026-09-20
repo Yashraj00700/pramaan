@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { analyze } from './_core';
+import { analyze } from './_core.js';
 import {
   validateRequest,
   toUserMessage,
@@ -7,7 +7,7 @@ import {
   statusForError,
   type ValidatedRequest,
   type ValidationError,
-} from './_validate';
+} from './_validate.js';
 
 // Give Claude room to reason (deep analysis + optional web search). Matches vercel.json.
 export const config = { maxDuration: 300 };
