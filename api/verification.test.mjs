@@ -8,10 +8,20 @@
 // IBAN) before being hard-coded here — see the derivation notes in each
 // section.
 
+// Registers ts-esm-loader.mjs so this file's `import './verification.ts'`
+// (below) can in turn resolve verification.ts's own `./referenceData.js`
+// import locally, with no compile step — see ts-esm-loader.mjs for why this
+// is needed only here, never in production. Must run (and be awaited via
+// the dynamic import below) before verification.ts is loaded, since static
+// imports are resolved during module linking, before this file's top-level
+// code would otherwise run.
+import { register } from 'node:module';
+register('./ts-esm-loader.mjs', import.meta.url);
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
+const {
   validateAadhaar,
   validatePAN,
   validateGSTIN,
@@ -22,7 +32,20 @@ import {
   validatePIN,
   validateMRZ,
   runDeterministicChecks,
-} from './verification.ts';
+} = await import('./verification.ts');
+
+// referenceData.ts has no relative imports of its own, so it resolves
+// directly (no loader needed) via its literal .ts extension.
+import {
+  gstStateName,
+  panEntityType,
+  panNameCheckLetter,
+  nameInitialCandidates,
+  ifscBankName,
+  pinRegionName,
+  expectationsFor,
+  SIGNATURE_FORGERY_INDICATORS,
+} from './referenceData.ts';
 
 // ---------------------------------------------------------------------------
 // Aadhaar
@@ -587,4 +610,210 @@ test('runDeterministicChecks: plain non-MRZ text of coincidental length does not
   ]);
   const mrzChecks = result.checks.filter((c) => c.check.startsWith('MRZ '));
   assert.equal(mrzChecks.length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// referenceData.ts — direct unit tests for exported lookups/predicates
+// ---------------------------------------------------------------------------
+
+test('referenceData: gstStateName resolves official GST state/UT codes', () => {
+  assert.equal(gstStateName('27'), 'Maharashtra');
+  assert.equal(gstStateName('07'), 'Delhi');
+  assert.equal(gstStateName('38'), 'Ladakh');
+});
+
+test('referenceData: gstStateName returns null for a code outside 01-38', () => {
+  assert.equal(gstStateName('99'), null);
+  assert.equal(gstStateName('00'), null);
+});
+
+test('referenceData: panEntityType decodes every documented PAN 4th-character code', () => {
+  assert.equal(panEntityType('P'), 'Individual (Person)');
+  assert.equal(panEntityType('C'), 'Company');
+  assert.equal(panEntityType('H'), 'Hindu Undivided Family (HUF)');
+  assert.equal(panEntityType('F'), 'Firm / Limited Liability Partnership');
+  assert.equal(panEntityType('A'), 'Association of Persons (AOP)');
+  assert.equal(panEntityType('T'), 'Trust');
+  assert.equal(panEntityType('B'), 'Body of Individuals (BOI)');
+  assert.equal(panEntityType('L'), 'Local Authority');
+  assert.equal(panEntityType('J'), 'Artificial Juridical Person');
+  assert.equal(panEntityType('G'), 'Government');
+  assert.equal(panEntityType('X'), null);
+});
+
+test('referenceData: panNameCheckLetter extracts the 5th character of a structurally valid PAN', () => {
+  assert.equal(panNameCheckLetter('ABCPD1234E'), 'D');
+  assert.equal(panNameCheckLetter('not-a-pan'), null);
+});
+
+test('referenceData: nameInitialCandidates covers both given-first and surname-first print orders', () => {
+  const candidates = nameInitialCandidates('Ramesh Dubey');
+  assert.ok(candidates.includes('R'));
+  assert.ok(candidates.includes('D'));
+  assert.deepEqual(nameInitialCandidates(''), []);
+});
+
+test('referenceData: ifscBankName resolves a common bank prefix and returns null for an unrecognised one', () => {
+  assert.equal(ifscBankName('HDFC'), 'HDFC Bank');
+  assert.equal(ifscBankName('SBIN'), 'State Bank of India');
+  assert.equal(ifscBankName('ZZZZ'), null);
+});
+
+test('referenceData: pinRegionName maps the leading PIN digit to an India Post region', () => {
+  assert.match(pinRegionName('400001'), /Maharashtra/);
+  assert.match(pinRegionName('110001'), /Delhi/);
+  assert.equal(pinRegionName(''), null);
+});
+
+test('referenceData: expectationsFor matches known document types via aliases and returns null for unknown ones', () => {
+  const income = expectationsFor('Income Certificate');
+  assert.ok(income);
+  assert.equal(income.key, 'income_certificate');
+  assert.ok(income.requiredFieldHints.length > 0);
+  assert.ok(income.tamperTargets.length > 0);
+  assert.ok(income.signatureAndSealGuidance.length > 0);
+
+  const invoice = expectationsFor('Tax Invoice #4521 (GST)');
+  assert.ok(invoice);
+  assert.equal(invoice.key, 'commercial_invoice_gst');
+
+  assert.equal(expectationsFor('Some Unrelated Document'), null);
+  assert.equal(expectationsFor(''), null);
+});
+
+test('referenceData: SIGNATURE_FORGERY_INDICATORS is non-empty reference guidance, not a computed check', () => {
+  assert.ok(Array.isArray(SIGNATURE_FORGERY_INDICATORS));
+  assert.ok(SIGNATURE_FORGERY_INDICATORS.length >= 5);
+  for (const item of SIGNATURE_FORGERY_INDICATORS) assert.equal(typeof item, 'string');
+});
+
+// ---------------------------------------------------------------------------
+// validateGSTIN / validateIFSC / validatePIN — referenceData-backed enrichment
+// ---------------------------------------------------------------------------
+
+test('validateGSTIN: success reason names the real state instead of just the code', () => {
+  const r = validateGSTIN('27ABCPD1234E1ZE');
+  assert.equal(r.valid, true);
+  assert.match(r.reason, /Maharashtra/);
+});
+
+test('validateIFSC: success reason names the bank when the prefix is recognised', () => {
+  const r = validateIFSC('SBIN0001234');
+  assert.equal(r.valid, true);
+  assert.match(r.reason, /State Bank of India/);
+});
+
+test('validateIFSC: success reason is honest about an unrecognised (not necessarily invalid) bank prefix', () => {
+  const r = validateIFSC('ZZZZ0001234');
+  assert.equal(r.valid, true);
+  assert.match(r.reason, /not in our common-bank reference list/);
+});
+
+test('validatePIN: success reason names the India Post region', () => {
+  const r = validatePIN('400001');
+  assert.equal(r.valid, true);
+  assert.match(r.reason, /Maharashtra/);
+});
+
+// ---------------------------------------------------------------------------
+// runDeterministicChecks — new cross-field consistency checks
+// ---------------------------------------------------------------------------
+
+test('runDeterministicChecks: PAN 5th character matching the printed name is a PASS', () => {
+  const result = runDeterministicChecks([
+    { label: 'PAN Number', value: 'ABCPD1234E' },
+    { label: 'Full Name', value: 'Ramesh Dubey' },
+  ]);
+  const nameCheck = result.checks.find((c) => c.check.includes('PAN 5th character vs printed name'));
+  assert.ok(nameCheck, 'expected a PAN-vs-name check');
+  assert.equal(nameCheck.status, 'PASS');
+  assert.equal(result.hardFailures, 0);
+});
+
+test('runDeterministicChecks: PAN 5th character not matching the printed name is a WARN, not a hard failure', () => {
+  const result = runDeterministicChecks([
+    { label: 'PAN Number', value: 'ABCPD1234E' },
+    { label: 'Full Name', value: 'Ramesh Sharma' },
+  ]);
+  const nameCheck = result.checks.find((c) => c.check.includes('PAN 5th character vs printed name'));
+  assert.ok(nameCheck, 'expected a PAN-vs-name check');
+  assert.equal(nameCheck.status, 'WARN');
+  assert.equal(result.hardFailures, 0, 'a name-order mismatch must never be counted as a hard failure');
+});
+
+test('runDeterministicChecks: GSTIN embedded PAN matching a separately printed PAN is a PASS', () => {
+  const result = runDeterministicChecks([
+    { label: 'GSTIN', value: '27ABCPD1234E1ZE' },
+    { label: 'PAN Number', value: 'ABCPD1234E' },
+  ]);
+  const crossCheck = result.checks.find((c) => c.check.includes('GSTIN embedded PAN vs printed PAN'));
+  assert.ok(crossCheck, 'expected a GSTIN-vs-PAN cross-check');
+  assert.equal(crossCheck.status, 'PASS');
+  assert.equal(result.hardFailures, 0);
+});
+
+test('runDeterministicChecks: GSTIN embedded PAN mismatching a separately printed PAN is a hard FAIL', () => {
+  const result = runDeterministicChecks([
+    { label: 'GSTIN', value: '27ABCPD1234E1ZE' }, // embeds PAN ABCPD1234E
+    { label: 'PAN Number', value: 'MNOCX5678K' }, // a different, structurally valid PAN
+  ]);
+  const crossCheck = result.checks.find((c) => c.check.includes('GSTIN embedded PAN vs printed PAN'));
+  assert.ok(crossCheck, 'expected a GSTIN-vs-PAN cross-check');
+  assert.equal(crossCheck.status, 'FAIL');
+  assert.equal(result.hardFailures, 1);
+});
+
+test('runDeterministicChecks: PIN code region obviously mismatching the printed state is a WARN', () => {
+  const result = runDeterministicChecks([
+    { label: 'PIN Code', value: '400001' }, // Maharashtra/MP/Chhattisgarh/Goa region
+    { label: 'State', value: 'Tamil Nadu' },
+  ]);
+  const regionCheck = result.checks.find((c) => c.check.includes('PIN code region vs stated state'));
+  assert.ok(regionCheck, 'expected a PIN-vs-state check');
+  assert.equal(regionCheck.status, 'WARN');
+});
+
+test('runDeterministicChecks: PIN code region matching the printed state emits no check (no invented PASS)', () => {
+  const result = runDeterministicChecks([
+    { label: 'PIN Code', value: '400001' },
+    { label: 'State', value: 'Maharashtra' },
+  ]);
+  const regionCheck = result.checks.find((c) => c.check.includes('PIN code region vs stated state'));
+  assert.equal(regionCheck, undefined);
+});
+
+test('runDeterministicChecks: an unrecognised docType adds no expectation-profile checks', () => {
+  const result = runDeterministicChecks([{ label: 'Full Name', value: 'Ramesh Dubey' }], 'Some Unrelated Document');
+  const expectationChecks = result.checks.filter((c) => c.check.startsWith('Expected field present'));
+  assert.equal(expectationChecks.length, 0);
+});
+
+test('runDeterministicChecks: a known docType flags missing expected fields as WARN, never a hard failure', () => {
+  const result = runDeterministicChecks([{ label: 'Full Name', value: 'Ramesh Dubey' }], 'Income Certificate');
+  const expectationChecks = result.checks.filter((c) => c.check.startsWith('Expected field present'));
+  assert.ok(expectationChecks.length > 0, 'expected at least one missing-field warning');
+  assert.ok(expectationChecks.every((c) => c.status === 'WARN'));
+  assert.equal(result.hardFailures, 0);
+});
+
+test('runDeterministicChecks: a known docType with all expected fields present adds no missing-field warnings', () => {
+  const result = runDeterministicChecks(
+    [
+      { label: 'Issuing Authority', value: 'Tehsildar, Pune' },
+      { label: 'Certificate No.', value: 'INC/2024/00123' },
+      { label: 'Date of Issue', value: '01/01/2024' },
+      { label: 'Valid Until', value: '31/12/2024' },
+      { label: 'Designation', value: 'Tehsildar' },
+      { label: 'Seal', value: 'Present' },
+    ],
+    'Income Certificate'
+  );
+  const expectationChecks = result.checks.filter((c) => c.check.startsWith('Expected field present'));
+  assert.equal(expectationChecks.length, 0);
+});
+
+test('runDeterministicChecks: omitting docType entirely behaves exactly as before (no expectation checks)', () => {
+  const result = runDeterministicChecks([{ label: 'Full Name', value: 'Ramesh Dubey' }]);
+  const expectationChecks = result.checks.filter((c) => c.check.startsWith('Expected field present'));
+  assert.equal(expectationChecks.length, 0);
 });

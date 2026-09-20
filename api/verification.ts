@@ -1,3 +1,16 @@
+import {
+  GSTIN_STATE_CODES,
+  gstStateName,
+  PAN_ENTITY_TYPES,
+  panEntityType,
+  panNameCheckLetter,
+  nameInitialCandidates,
+  ifscBankName,
+  pinRegionName,
+  expectationsFor,
+  type DocumentExpectationProfile,
+} from './referenceData.js';
+
 /**
  * verification.ts
  * ----------------
@@ -150,19 +163,10 @@ export function validateAadhaar(v: string): ValidationResult {
 // validatePAN
 // ===========================================================================
 
-// 4th character of a PAN encodes the holder's entity type.
-const PAN_ENTITY_TYPES: Record<string, string> = {
-  P: 'Individual (Person)',
-  C: 'Company',
-  H: 'Hindu Undivided Family (HUF)',
-  A: 'Association of Persons (AOP)',
-  B: 'Body of Individuals (BOI)',
-  G: 'Government',
-  J: 'Artificial Juridical Person',
-  L: 'Local Authority',
-  F: 'Firm / Limited Liability Partnership',
-  T: 'Trust',
-};
+// 4th character of a PAN encodes the holder's entity type; 5th character is
+// a name-initial check. Both rule sets live in referenceData.ts, the single
+// source of truth for Indian document format rules (see PAN_ENTITY_TYPES,
+// panEntityType(), panNameCheckLetter()).
 
 /**
  * Validates an Indian PAN (Permanent Account Number):
@@ -181,11 +185,11 @@ export function validatePAN(v: string): ValidationResult {
   }
 
   const entityCode = s[3];
-  const entityMeaning = PAN_ENTITY_TYPES[entityCode];
+  const entityMeaning = panEntityType(entityCode);
   if (!entityMeaning) {
     return {
       valid: false,
-      reason: `4th character '${entityCode}' is not a recognised PAN entity-type code (expected one of P/C/H/A/B/G/J/L/F/T).`,
+      reason: `4th character '${entityCode}' is not a recognised PAN entity-type code (expected one of ${Object.keys(PAN_ENTITY_TYPES).join('/')}).`,
     };
   }
 
@@ -199,12 +203,10 @@ export function validatePAN(v: string): ValidationResult {
 // validateGSTIN
 // ===========================================================================
 
-// Valid GST state codes 01-38 (as allocated by the Indian Census/GSTN; not
-// every number in the range is currently allotted to a state, but 01-38 is
-// the valid numeric envelope used for format validation).
-const GSTIN_VALID_STATE_CODES = new Set(
-  Array.from({ length: 38 }, (_, i) => String(i + 1).padStart(2, '0'))
-);
+// Valid GST state codes — sourced from referenceData.ts's official 01-38
+// state/UT map (GSTIN_STATE_CODES), so an invalid/non-existent state code is
+// detectable against the real list rather than a bare numeric range.
+const GSTIN_VALID_STATE_CODES = new Set(Object.keys(GSTIN_STATE_CODES));
 
 // GSTIN checksum alphabet used for the mod-36 check digit.
 const GSTIN_CHECKSUM_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -252,8 +254,9 @@ export function validateGSTIN(v: string): ValidationResult {
 
   const stateCode = s.slice(0, 2);
   if (!/^[0-9]{2}$/.test(stateCode) || !GSTIN_VALID_STATE_CODES.has(stateCode)) {
-    return { valid: false, reason: `GSTIN state code '${stateCode}' is not a valid state code (expected 01-38).` };
+    return { valid: false, reason: `GSTIN state code '${stateCode}' is not a valid state code (expected 01-38, per the official GST state/UT code list).` };
   }
+  const stateName = gstStateName(stateCode);
 
   const panPart = s.slice(2, 12);
   const panCheck = validatePAN(panPart);
@@ -272,7 +275,7 @@ export function validateGSTIN(v: string): ValidationResult {
 
   return {
     valid: true,
-    reason: `GSTIN state code (${stateCode}), embedded PAN, and mod-36 checksum are all valid.`,
+    reason: `GSTIN state code ${stateCode} (${stateName ?? 'unrecognised state name'}), embedded PAN, and mod-36 checksum are all valid.`,
   };
 }
 
@@ -305,9 +308,13 @@ export function validateIFSC(v: string): ValidationResult {
       reason: 'IFSC must match the format AAAA0XXXXXX (4 letters, literal 0, 6 alphanumeric).',
     };
   }
+  const bankCode = s.slice(0, 4);
+  const bankName = ifscBankName(bankCode);
   return {
     valid: true,
-    reason: `IFSC format is valid — bank code '${s.slice(0, 4)}', branch code '${s.slice(5)}'.`,
+    reason: bankName
+      ? `IFSC format is valid — bank code '${bankCode}' (${bankName}), branch code '${s.slice(5)}'.`
+      : `IFSC format is valid — bank code '${bankCode}' is not in our common-bank reference list (unrecognised, not necessarily invalid), branch code '${s.slice(5)}'.`,
   };
 }
 
@@ -444,7 +451,13 @@ export function validatePIN(v: string): ValidationResult {
       reason: `Indian PIN codes must start with a digit 1-8 (found leading digit '${s[0]}').`,
     };
   }
-  return { valid: true, reason: 'PIN code is 6 digits with a valid leading region digit (1-8).' };
+  const region = pinRegionName(s);
+  return {
+    valid: true,
+    reason: region
+      ? `PIN code is 6 digits with a valid leading region digit (1-8) — India Post region: ${region}.`
+      : 'PIN code is 6 digits with a valid leading region digit (1-8).',
+  };
 }
 
 // ===========================================================================
@@ -955,10 +968,14 @@ function validDateOrNull(y: number, mo: number, d: number): Date | null {
 
 /**
  * Scans a set of extracted fields for identifiers Pramaan can mathematically
- * validate, plus conservative date-logic checks. Never invents a check: if
- * nothing matches, returns empty arrays.
+ * validate, cross-field consistency (PAN vs name, GSTIN vs PAN, PIN vs
+ * state) via referenceData.ts, plus conservative date-logic checks. When an
+ * optional `docType` is supplied, also checks the field set against that
+ * document type's expectation profile (referenceData.ts) for expected-but-
+ * missing fields. Never invents a check: if nothing matches, returns empty
+ * arrays.
  */
-export function runDeterministicChecks(fields: ExtractedField[]): DeterministicChecksResult {
+export function runDeterministicChecks(fields: ExtractedField[], docType?: string): DeterministicChecksResult {
   const checks: ConsistencyCheck[] = [];
   const signals: TechnicalSignal[] = [];
   let hardFailures = 0;
@@ -966,6 +983,10 @@ export function runDeterministicChecks(fields: ExtractedField[]): DeterministicC
   const safeFields = Array.isArray(fields) ? fields : [];
 
   // --- Identifier checksum/format checks ------------------------------
+  // Also remembers which fields matched which kind, so the cross-field
+  // consistency checks below (PAN-vs-name, GSTIN-vs-PAN, PIN-vs-state) don't
+  // have to re-run detection from scratch.
+  const matchedByKind: Partial<Record<IdentifierKind, ExtractedField[]>> = {};
   for (const field of safeFields) {
     if (!field || typeof field.value !== 'string') continue;
     const value = field.value.trim();
@@ -973,6 +994,7 @@ export function runDeterministicChecks(fields: ExtractedField[]): DeterministicC
 
     const kind = detectIdentifierKind(field.label, value);
     if (!kind) continue;
+    (matchedByKind[kind] ??= []).push(field);
 
     const result = VALIDATORS[kind](value);
     const checkName = `${CHECK_NAMES[kind]} (${field.label || 'unlabeled field'})`;
@@ -990,6 +1012,115 @@ export function runDeterministicChecks(fields: ExtractedField[]): DeterministicC
     });
 
     if (!result.valid) hardFailures++;
+  }
+
+  // --- Cross-field consistency checks using referenceData.ts -----------
+
+  // PAN 5th character vs a printed name field. Soft (WARN) rather than a
+  // hard FAIL: name order on Indian documents varies (given-first vs
+  // surname-first) and a person's legal PAN does not change on marriage/
+  // name change, so a mismatch is a real prompt to double-check, not
+  // conclusive proof of tampering.
+  const nameField = safeFields.find(
+    (f) =>
+      f &&
+      typeof f.label === 'string' &&
+      typeof f.value === 'string' &&
+      f.value.trim() &&
+      /\bname\b/i.test(f.label) &&
+      !/father|mother|guardian|spouse|husband|wife|nominee|witness/i.test(f.label)
+  );
+  const panFieldsForNameCheck = matchedByKind.pan;
+  if (nameField && panFieldsForNameCheck && panFieldsForNameCheck.length > 0) {
+    for (const panField of panFieldsForNameCheck) {
+      const checkLetter = panNameCheckLetter(panField.value.trim());
+      if (!checkLetter) continue;
+      const candidates = nameInitialCandidates(nameField.value);
+      if (candidates.length === 0) continue;
+      const matches = candidates.includes(checkLetter);
+      checks.push({
+        check: `PAN 5th character vs printed name (${panField.label || 'PAN'} / ${nameField.label})`,
+        status: matches ? 'PASS' : 'WARN',
+        detail: matches
+          ? `PAN 5th character '${checkLetter}' matches the first letter of a name token in "${nameField.value.trim()}", as expected by PAN structure rules.`
+          : `PAN 5th character '${checkLetter}' does not match the first letter of any name token in "${nameField.value.trim()}" (checked: ${candidates.join(', ')}). This is a real structural rule for individual PANs, but legitimate mismatches happen (name changes, transliteration, order ambiguity) — treat as a prompt to verify, not proof of tampering.`,
+      });
+    }
+  }
+
+  // GSTIN's embedded PAN (characters 3-12) vs a separately printed PAN
+  // field on the same document. Unlike the name check above, this is a
+  // direct text-to-text comparison of two printed values — a mismatch is a
+  // provable inconsistency between the document's own fields.
+  const gstinFieldsForPanCheck = matchedByKind.gstin;
+  const panFieldsForGstinCheck = matchedByKind.pan;
+  if (gstinFieldsForPanCheck && panFieldsForGstinCheck) {
+    for (const gstinField of gstinFieldsForPanCheck) {
+      const gstinClean = clean(gstinField.value);
+      if (gstinClean.length !== 15) continue;
+      const embeddedPan = gstinClean.slice(2, 12);
+      for (const panField of panFieldsForGstinCheck) {
+        const printedPan = clean(panField.value);
+        if (printedPan.length !== 10) continue;
+        const match = embeddedPan === printedPan;
+        checks.push({
+          check: `GSTIN embedded PAN vs printed PAN (${gstinField.label || 'GSTIN'} / ${panField.label || 'PAN'})`,
+          status: match ? 'PASS' : 'FAIL',
+          detail: match
+            ? `PAN embedded in the GSTIN (${embeddedPan}) matches the separately printed PAN (${printedPan}).`
+            : `PAN embedded in the GSTIN (${embeddedPan}) does NOT match the separately printed PAN (${printedPan}) — these two fields on the same document are mathematically required to reference the same PAN.`,
+        });
+        if (!match) hardFailures++;
+      }
+    }
+  }
+
+  // PIN code's India-Post region vs a printed state/address field. Soft
+  // (WARN): the region map is broad (covers several states each) and state
+  // boundaries have shifted historically, so this only flags an outright
+  // region mismatch, never a fine-grained one.
+  const pinFieldsForRegionCheck = matchedByKind.pin;
+  const stateField = safeFields.find(
+    (f) => f && typeof f.label === 'string' && typeof f.value === 'string' && f.value.trim() && /\bstate\b/i.test(f.label)
+  );
+  if (pinFieldsForRegionCheck && stateField) {
+    for (const pinField of pinFieldsForRegionCheck) {
+      const region = pinRegionName(clean(pinField.value).replace(/[^0-9]/g, ''));
+      if (!region) continue;
+      const stateValue = stateField.value.trim().toLowerCase();
+      const inRegion = region.toLowerCase().includes(stateValue);
+      if (!inRegion) {
+        checks.push({
+          check: `PIN code region vs stated state (${pinField.label || 'PIN'} / ${stateField.label})`,
+          status: 'WARN',
+          detail: `PIN code "${pinField.value.trim()}" falls in the India Post region covering ${region}, which does not obviously include the printed state "${stateField.value.trim()}". Regions are broad and this is not conclusive on its own, but is worth checking against the original.`,
+        });
+      }
+    }
+  }
+
+  // --- Document-type expectation profile (optional) --------------------
+  // Only runs when a docType is supplied (e.g. AnalysisReport.documentType).
+  // Flags EXPECTED fields that appear to be missing from the extracted set.
+  // This is always a WARN — absence can simply mean the field wasn't
+  // extracted, never a proven forgery signal on its own.
+  if (docType) {
+    const profile: DocumentExpectationProfile | null = expectationsFor(docType);
+    if (profile) {
+      for (const hint of profile.requiredFieldHints) {
+        const re = new RegExp(hint.pattern, 'i');
+        const found = safeFields.some(
+          (f) => f && typeof f.label === 'string' && typeof f.value === 'string' && f.value.trim() && re.test(f.label)
+        );
+        if (!found) {
+          checks.push({
+            check: `Expected field present — ${hint.name} (${profile.label})`,
+            status: 'WARN',
+            detail: `A genuine ${profile.label} typically carries a ${hint.name}, but no extracted field appears to match it. Absence alone does not prove forgery — the field may simply not have been captured — but it is worth checking against the original document. Classic tamper targets for this document type: ${profile.tamperTargets[0]}`,
+          });
+        }
+      }
+    }
   }
 
   // --- MRZ (Machine Readable Zone) check-digit validation -------------

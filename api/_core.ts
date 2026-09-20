@@ -39,6 +39,7 @@ import jsQR from 'jsqr';
 import { runDeterministicChecks } from './verification.js';
 import { screenNames } from './sanctions.js';
 import { runCourt, condense } from './court-fast.js';
+import { runImageForensics, type ForensicsFinding } from './imageForensics.js';
 
 // Latency is a product requirement here: a scan that takes minutes is unusable at a
 // counter. Sonnet 5 is markedly faster for this vision + extraction workload; set
@@ -459,9 +460,10 @@ async function extractMetadata(
   buf: Buffer,
   mediaType: string,
   fileName: string,
-): Promise<{ signals: Signal[]; text: string; extraImages: ExtraImage[] }> {
+): Promise<{ signals: Signal[]; text: string; extraImages: ExtraImage[]; findings: ForensicsFinding[] }> {
   const signals: Signal[] = [];
   const extraImages: ExtraImage[] = [];
+  const findings: ForensicsFinding[] = [];
   const sha = createHash('sha256').update(buf).digest('hex');
   const sizeKb = (buf.length / 1024).toFixed(1);
 
@@ -506,15 +508,50 @@ async function extractMetadata(
       }
     } catch { /* best-effort */ }
 
-    // Real image forensics: ELA + QR
-    await imageForensics(buf, signals, extraImages);
+    // Real image forensics: block-level ELA, multi-quality JPEG ghost, DQT/encoder
+    // fingerprint, and the localized heatmap — see api/imageForensics.ts and
+    // docs/FORENSICS_UPGRADES.md for the algorithm detail. Wrapped so a failure
+    // here still leaves QR decode below (and everything else) running.
+    try {
+      const forensics = await runImageForensics(buf);
+      signals.push(...forensics.signals);
+      findings.push(...forensics.findings);
+      if (forensics.heatmapPng) {
+        extraImages.push({
+          media_type: 'image/png',
+          data: forensics.heatmapPng,
+          caption:
+            'ERROR-LEVEL ANALYSIS (ELA) heatmap of the document — per-block z-scored against the page\'s own robust baseline and colour-ramped calm blue → amber → red for increasing anomaly, with faint gridlines marking the scoring blocks. Amber/red patches around meaningful fields suggest edited/re-saved regions; the underlying block scores, JPEG-ghost double-compression check and DQT/encoder fingerprint are reported separately below.',
+        });
+      }
+    } catch {
+      signals.push({ label: 'Image forensics', value: 'Forensic analysis failed to complete for this image', concern: false });
+    }
+
+    // QR / barcode — independent of the forensic scoring above, kept as its own
+    // best-effort step so a decode failure never affects (or is affected by) it.
+    try {
+      const rgba = await sharp(buf)
+        .rotate()
+        .resize({ width: 1400, height: 1400, fit: 'inside', withoutEnlargement: true })
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const code = jsQR(new Uint8ClampedArray(rgba.data), rgba.info.width, rgba.info.height);
+      if (code && code.data) {
+        const payload = code.data.length > 400 ? code.data.slice(0, 400) + '…' : code.data;
+        signals.push({ label: 'QR/barcode decoded', value: payload, concern: false });
+      } else {
+        signals.push({ label: 'QR/barcode', value: 'None detected (or unreadable)', concern: false });
+      }
+    } catch { /* best-effort */ }
   }
 
   const text =
     'VERIFIED TECHNICAL METADATA (extracted deterministically in code — trust these facts):\n' +
     signals.map((s) => `- ${s.label}: ${s.value}${s.concern ? '  [POTENTIAL CONCERN]' : ''}`).join('\n');
 
-  return { signals, text, extraImages };
+  return { signals, text, extraImages, findings };
 }
 
 /**
@@ -547,55 +584,6 @@ async function assertAnalysableImage(buf: Buffer) {
     if (e?.message?.includes('blank or near-uniform')) throw e;
     // stats() failing is not itself a reason to reject
   }
-}
-
-/** Error-Level Analysis heatmap + QR decode, both best-effort. */
-async function imageForensics(buf: Buffer, signals: Signal[], extraImages: ExtraImage[]) {
-  // Normalize to a manageable size for both ELA and QR.
-  let base: Buffer, width: number, height: number;
-  try {
-    const norm = await sharp(buf).rotate().resize({ width: 1400, height: 1400, fit: 'inside', withoutEnlargement: true }).toBuffer({ resolveWithObject: true });
-    base = norm.data;
-    width = norm.info.width;
-    height = norm.info.height;
-  } catch {
-    return; // unreadable image — Claude still sees the original
-  }
-
-  // --- ELA ---
-  try {
-    const q = 90;
-    const resaved = await sharp(base).jpeg({ quality: q }).toBuffer();
-    const a = await sharp(base).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-    const b = await sharp(resaved).removeAlpha().resize(a.info.width, a.info.height).raw().toBuffer();
-    const n = Math.min(a.data.length, b.length);
-    const diff = Buffer.alloc(n);
-    let maxD = 1, sum = 0;
-    for (let i = 0; i < n; i++) {
-      const d = Math.abs(a.data[i] - b[i]);
-      diff[i] = d;
-      if (d > maxD) maxD = d;
-      sum += d;
-    }
-    const scale = Math.min(25, 255 / maxD);
-    for (let i = 0; i < n; i++) diff[i] = Math.min(255, Math.round(diff[i] * scale));
-    const elaPng = await sharp(diff, { raw: { width: a.info.width, height: a.info.height, channels: 3 } }).png({ compressionLevel: 8 }).toBuffer();
-    const meanDiff = sum / n;
-    extraImages.push({ media_type: 'image/png', data: elaPng.toString('base64'), caption: 'ERROR-LEVEL ANALYSIS (ELA) heatmap of the document — bright/high-contrast localized patches around meaningful fields suggest edited/re-saved regions.' });
-    signals.push({ label: 'ELA tamper analysis', value: `Computed (mean error ${meanDiff.toFixed(1)}) — heatmap sent for review`, concern: meanDiff > 12 });
-  } catch { /* best-effort */ }
-
-  // --- QR / barcode ---
-  try {
-    const rgba = await sharp(base).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    const code = jsQR(new Uint8ClampedArray(rgba.data), rgba.info.width, rgba.info.height);
-    if (code && code.data) {
-      const payload = code.data.length > 400 ? code.data.slice(0, 400) + '…' : code.data;
-      signals.push({ label: 'QR/barcode decoded', value: payload, concern: false });
-    } else {
-      signals.push({ label: 'QR/barcode', value: 'None detected (or unreadable)', concern: false });
-    }
-  } catch { /* best-effort */ }
 }
 
 function safe(fn: () => string | undefined): string { try { return fn() || ''; } catch { return ''; } }
@@ -649,7 +637,7 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
   }
   if ((input.mediaType || '').startsWith('image/')) await assertAnalysableImage(buf);
 
-  const { signals, text: metaText, extraImages } = await extractMetadata(buf, input.mediaType, input.fileName);
+  const { signals, text: metaText, extraImages, findings: forensicsFindings } = await extractMetadata(buf, input.mediaType, input.fileName);
 
   const client = new Anthropic({ apiKey });
   const effort = (process.env.ANALYSIS_EFFORT || 'low') as any;
@@ -710,7 +698,11 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
   report.technicalSignals = [...signals, ...arr(report.technicalSignals)];
   report.recommendedAction = String(report.recommendedAction || '');
   report.externalChecksNeeded = arr(report.externalChecksNeeded);
-  report.visualMarkers = arr(report.visualMarkers);
+  // Code-computed, block-localized anomalies (ELA/JPEG-ghost) render through the
+  // same VisualMarker box UI as Claude's own evidence markers — see
+  // docs/FORENSICS_UPGRADES.md §5. Deterministic findings first, same pattern as
+  // technicalSignals above.
+  report.visualMarkers = [...forensicsFindings, ...arr(report.visualMarkers)];
   report.riskBreakdown = arr(report.riskBreakdown);
   report.timeline = arr(report.timeline);
   report.modules = [];
