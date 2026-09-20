@@ -93,6 +93,17 @@ const GROUP_C_IDS = ['issuer', 'financial', 'compliance', 'screening', 'predicti
 const PASS_A_SCHEMA = {
   type: 'object',
   properties: {
+    inputAssessment: {
+      type: 'object',
+      description: 'FIRST judge the input itself, before any fraud analysis. Be strict: refusing a non-document is correct behaviour, not a failure.',
+      properties: {
+        isDocument: { type: 'boolean', description: 'True ONLY for a document: certificate, invoice, ID card, bank statement, marksheet, contract, form, letter. A selfie, person, pet, meme, landscape, food, product photo or app screenshot is NOT a document.' },
+        kind: { type: 'string', description: 'What the image actually shows, in a few words.' },
+        legibility: { type: 'string', enum: ['GOOD', 'POOR', 'UNREADABLE'], description: 'Is the text readable enough to actually verify anything?' },
+        reason: { type: 'string', description: 'One sentence explaining the call.' },
+      },
+      required: ['isDocument', 'kind', 'legibility', 'reason'],
+    },
     documentType: { type: 'string', description: 'e.g. "Income Certificate (MP e-District)", "Commercial Invoice", "Bank Statement", "Class X Marksheet", "PAN card".' },
     verdict: { type: 'string', enum: ['AUTHENTIC', 'SUSPICIOUS', 'LIKELY_FAKE'] },
     riskScore: { type: 'number', description: '0-100. Higher = more likely fraudulent/tampered.' },
@@ -195,7 +206,7 @@ const PASS_A_SCHEMA = {
       required: ['name', 'probability', 'rationale', 'nextSteps'],
     },
   },
-  required: ['documentType', 'verdict', 'riskScore', 'confidence', 'summary', 'redFlags', 'consistencyChecks', 'extractedFields', 'technicalSignals', 'recommendedAction', 'externalChecksNeeded', 'visualMarkers', 'riskBreakdown', 'timeline'],
+  required: ['inputAssessment', 'documentType', 'verdict', 'riskScore', 'confidence', 'summary', 'redFlags', 'consistencyChecks', 'extractedFields', 'technicalSignals', 'recommendedAction', 'externalChecksNeeded', 'visualMarkers', 'riskBreakdown', 'timeline'],
 } as const;
 
 const SYSTEM_A = `You are DocsGuard, a world-class and scrupulously HONEST document-forensics examiner. You judge whether a document (government certificates, marksheets, IDs, bank statements, invoices, tender papers, contracts, etc.) is authentic or fraudulent, and you explain your reasoning with specific evidence.
@@ -251,7 +262,7 @@ function moduleGroupSchema(ids: string[]) {
             narrative: {
               type: 'string',
               description:
-                'EXACTLY ONE tight, specific paragraph (not 2-4) with at least one concrete, document-specific citation — a quoted field value actually printed on THIS document, a measured metadata value (e.g. an actual EXIF/PDF timestamp, an actual ELA mean-error number), or a specific coordinate/region. FORBIDDEN: generic filler that would read the same on any document of this type. If you cannot verify something, say exactly what you could NOT determine and why, in the same paragraph, instead of padding with vague reassurance.',
+                'EXACTLY one tight paragraph of AT MOST 60 words, instead of padding with vague reassurance.',
             },
             checks: {
               type: 'array',
@@ -304,7 +315,7 @@ function buildModuleSystem(ids: string[]): string {
 Every sentence must cite something you actually observed ON THIS SPECIFIC DOCUMENT: a quoted field value exactly as printed ("Total Amount: ₹42,300"), a measured metadata value (an actual EXIF timestamp, PDF producer string, or ELA mean-error number — not "the metadata looks fine"), or a specific coordinate/region ("the stamp overlapping the signature in the lower-right"). A sentence that would read equally true of any other document of this type is FORBIDDEN — delete it and replace it with something specific, or state plainly what you could not determine and why.
 
 ===== SPEED BUDGET =====
-Each module's narrative must be EXACTLY ONE tight, specific paragraph (not 2-4) — dense with concrete citations, not padded. Keep checks and findings equally concrete and no longer than necessary.
+Each module's narrative must be EXACTLY one tight paragraph of AT MOST 60 words (not 2-4) — dense with concrete citations, not padded. Keep checks and findings equally concrete and no longer than necessary.
 
 ===== YOUR ASSIGNED MODULES — produce ONLY these, in this exact order, and no others =====
 ${lines}
@@ -347,7 +358,7 @@ async function runPassA(client: any, effort: any, webMax: number, userContent: a
   ];
 
   const params = (messages: any[]) => ({
-    model: MODEL, max_tokens: 6000, thinking: { type: 'adaptive' }, output_config: { effort } as any,
+    model: MODEL, max_tokens: 4500, thinking: { type: 'adaptive' }, output_config: { effort } as any,
     system: SYSTEM_A, tools, tool_choice: { type: 'auto' }, messages,
   }) as any;
 
@@ -388,7 +399,7 @@ async function runModuleGroup(opts: {
     ];
 
     const params = (messages: any[]) => ({
-      model: MODEL, max_tokens: 4500, thinking: { type: 'disabled' }, output_config: { effort } as any,
+      model: MODEL, max_tokens: 2800, thinking: { type: 'disabled' }, output_config: { effort } as any,
       system: buildModuleSystem(ids), tools, tool_choice: { type: 'auto' }, messages,
     }) as any;
 
@@ -496,6 +507,38 @@ async function extractMetadata(
   return { signals, text, extraImages };
 }
 
+/**
+ * Deterministic input gate. Runs before any model call so we never spend a scan —
+ * or produce a confident-looking verdict — on something that cannot be analysed.
+ * Throws a user-facing message; the caller surfaces it verbatim.
+ */
+async function assertAnalysableImage(buf: Buffer) {
+  let meta: any;
+  try {
+    meta = await sharp(buf).metadata();
+  } catch {
+    throw new Error('That file could not be opened as an image. Please upload a clear photo, scan or PDF of the document.');
+  }
+  const w = meta?.width || 0;
+  const h = meta?.height || 0;
+  if (w && h && Math.max(w, h) < 500) {
+    throw new Error(
+      `This image is too small to examine (${w}x${h}). Forensic checks need detail — please upload a scan or photo at least 500px on its longest side.`,
+    );
+  }
+  // A near-uniform image (blank page, solid colour, lens cap) carries no evidence.
+  try {
+    const st: any = await sharp(buf).greyscale().stats();
+    const sd = st?.channels?.[0]?.stdev ?? 999;
+    if (sd < 6) {
+      throw new Error('This image looks blank or near-uniform, so there is nothing to examine. Please upload the actual document.');
+    }
+  } catch (e: any) {
+    if (e?.message?.includes('blank or near-uniform')) throw e;
+    // stats() failing is not itself a reason to reject
+  }
+}
+
 /** Error-Level Analysis heatmap + QR decode, both best-effort. */
 async function imageForensics(buf: Buffer, signals: Signal[], extraImages: ExtraImage[]) {
   // Normalize to a manageable size for both ELA and QR.
@@ -594,6 +637,8 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
       if (small.length < buf.length) sendB64 = small.toString('base64');
     } catch { /* fall back to the original */ }
   }
+  if ((input.mediaType || '').startsWith('image/')) await assertAnalysableImage(buf);
+
   const { signals, text: metaText, extraImages } = await extractMetadata(buf, input.mediaType, input.fileName);
 
   const client = new Anthropic({ apiKey });
@@ -615,6 +660,27 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
 
   // ---- PASS A: fast core (sequential — everything else needs this result) ----
   const report: any = await runPassA(client, effort, webMax, userContent, metaText);
+
+  // GUARD: if this is not a document, stop here. Running a forensic dossier on a
+  // selfie would produce an authoritative-looking verdict about nothing, which is
+  // exactly the kind of confident nonsense this product exists to avoid. Skipping
+  // the remaining passes also returns the answer far faster.
+  const ia = report?.inputAssessment;
+  if (ia && ia.isDocument === false) {
+    return {
+      ...report,
+      documentType: ia.kind || 'Not a document',
+      verdict: 'SUSPICIOUS',
+      riskScore: 0,
+      confidence: clamp(report.confidence, 90),
+      notADocument: true,
+      summary: `This does not appear to be a document — it looks like ${ia.kind || 'something else'}. ${ia.reason || ''} No authenticity verdict can be given, because there is nothing to verify. Please upload a certificate, invoice, ID, statement or similar.`,
+      recommendedAction: 'Upload an actual document (certificate, invoice, ID, bank statement or contract) to run a verification.',
+      redFlags: [], consistencyChecks: [], extractedFields: [], modules: [],
+      riskBreakdown: [], timeline: [], visualMarkers: [], externalChecksNeeded: [],
+      technicalSignals: signals,
+    };
+  }
 
   report.documentType = String(report.documentType || 'Unknown document');
   report.verdict = ['AUTHENTIC', 'SUSPICIOUS', 'LIKELY_FAKE'].includes(report.verdict) ? report.verdict : 'SUSPICIOUS';

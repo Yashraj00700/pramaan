@@ -95,7 +95,7 @@ export async function runCourt(opts: {
     const { client, model, userContent, baseReport, bindingFacts } = opts;
     const res = await client.messages.create({
       model,
-      max_tokens: 9000,
+      max_tokens: 5000,
       thinking: { type: 'adaptive' },
       output_config: { effort: opts.effort || 'low' },
       system: SYSTEM,
