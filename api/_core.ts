@@ -547,6 +547,13 @@ function safeDate(fn: () => Date | undefined): Date | null { try { return fn() |
 function clamp(n: unknown, dflt: number): number { const v = typeof n === 'number' && isFinite(n) ? n : dflt; return Math.max(0, Math.min(100, Math.round(v))); }
 function arr(v: any): any[] { return Array.isArray(v) ? v : []; }
 
+/** Accept 0-100 or a 0-1 fraction; anything else falls back to `dflt`. */
+function asPercent(v: unknown, dflt: number): number {
+  if (typeof v !== 'number' || !isFinite(v)) return dflt;
+  if (v > 0 && v <= 1) return v * 100; // fraction expressed as 0-1
+  return v;
+}
+
 /**
  * Merge code-computed results into a dossier module. Deterministic results are
  * authoritative: they are prepended to the module's checks, the note is prepended
@@ -759,8 +766,11 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
     report.court = court;
     const r: any = court.ruling;
     if (['AUTHENTIC', 'SUSPICIOUS', 'LIKELY_FAKE'].includes(r.verdict)) report.verdict = r.verdict;
-    report.riskScore = clamp(r.riskScore, report.riskScore);
-    report.confidence = clamp(r.confidence, report.confidence);
+    // The judge sometimes expresses these as 0-1 fractions rather than 0-100.
+    // Taken literally that renders as "1% confidence", so normalise before merging
+    // and fall back to Pass A's value when the ruling gives us nothing usable.
+    report.riskScore = clamp(asPercent(r.riskScore, report.riskScore), report.riskScore);
+    report.confidence = clamp(asPercent(r.confidence, report.confidence), report.confidence);
     if (r.reasoning) {
       mergeIntoModule(
         report,
