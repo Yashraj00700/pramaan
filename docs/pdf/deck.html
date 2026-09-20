@@ -1,0 +1,219 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Pramaan Deck</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@page{size:338.7mm 190.5mm;margin:0}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',sans-serif;color:#0F172A}
+.s{width:338.7mm;height:190.5mm;padding:16mm 18mm;page-break-after:always;position:relative;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.s:last-child{page-break-after:auto}
+h1,h2,.d{font-family:'Outfit';letter-spacing:-.025em}
+h2{font-size:30pt;font-weight:800;margin:0 0 5mm;line-height:1.05}
+.eyebrow{font-size:9pt;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#2563EB;margin-bottom:3mm}
+p{font-size:12pt;line-height:1.5;margin:0 0 3mm;color:#334155}
+.lead{font-size:14pt;color:#1E293B}
+.num{position:absolute;bottom:8mm;right:14mm;font-size:9pt;color:#94A3B8}
+.brand{position:absolute;bottom:8mm;left:18mm;font-size:9pt;color:#94A3B8;font-weight:600}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm}
+.card{border:1px solid #E2E8F0;border-radius:12px;padding:5mm 6mm;background:#fff}
+.tint{background:#F5F8FF;border-color:#DBEAFE}
+.stat .n{font-family:'Outfit';font-size:26pt;font-weight:900;color:#1E40AF;line-height:1}
+.stat .l{font-size:9.5pt;color:#475569;margin-top:2mm;line-height:1.35}
+ul{margin:0;padding-left:6mm}li{font-size:12pt;margin-bottom:2.5mm;color:#334155;line-height:1.45}
+.big{font-size:52pt;font-weight:900;line-height:1.02}
+table{width:100%;border-collapse:collapse;font-size:10.5pt}
+th,td{text-align:left;padding:2.6mm 2mm;border-bottom:1px solid #E2E8F0}
+th{font-size:8.5pt;text-transform:uppercase;letter-spacing:.1em;color:#64748B}
+.pill{display:inline-block;font-size:9pt;font-weight:700;padding:1mm 3mm;border-radius:999px;border:1px solid}
+.r{background:#FEF2F2;border-color:#FECACA;color:#B91C1C}
+.a{background:#FFFBEB;border-color:#FDE68A;color:#B45309}
+.g{background:#ECFDF5;border-color:#A7F3D0;color:#047857}
+.mono{font-family:ui-monospace,Menlo,monospace}
+.hero{background:linear-gradient(135deg,#0F172A,#1E3A8A);color:#fff}
+.hero h1,.hero p{color:#fff}
+</style></head><body>
+
+<section class="s hero" style="justify-content:center">
+  <svg width="74" height="74" viewBox="0 0 64 64" fill="none"><path d="M32 5l20 8v15c0 12-8.4 21.2-20 26C20.4 49.2 12 40 12 28V13l20-8z" fill="#fff"/><path d="M24 31.5l6 6 12-13" stroke="#1E3A8A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <h1 class="d big" style="margin:7mm 0 3mm">Pramaan</h1>
+  <p style="font-size:19pt;font-weight:700;opacity:.95;margin-bottom:4mm">Proving a document is real — in seconds.</p>
+  <p style="font-size:13pt;opacity:.82;max-width:190mm">AI document-authenticity and fraud detection for government schemes.
+  Mathematics decides what mathematics can decide — and the system says plainly what it could not verify.</p>
+</section>
+
+<section class="s">
+  <div class="eyebrow">The problem</div>
+  <h2>Aadhaar proves who you are.<br/>It does not prove what your paper says.</h2>
+  <p class="lead" style="max-width:250mm">Most welfare fraud in India is not a stolen identity. It is a real, correctly-authenticated
+  person submitting a document that says something untrue about them.</p>
+  <div class="g3" style="margin-top:6mm">
+    <div class="card"><strong>Income certificate</strong><p style="font-size:10.5pt;margin-top:2mm">says ₹96,500 — the bank statement says otherwise</p></div>
+    <div class="card"><strong>Caste / domicile certificate</strong><p style="font-size:10.5pt;margin-top:2mm">carries a seal the issuing officer never applied</p></div>
+    <div class="card"><strong>Bank guarantee</strong><p style="font-size:10.5pt;margin-top:2mm">backs a tender, and the bank has never heard of it</p></div>
+  </div>
+  <p style="margin-top:6mm"><strong>Checked how?</strong> One clerk, hundreds of applications, no forensic tooling, no time.
+  A competent forgery passes. An honest applicant with an odd-looking document gets rejected. Both failures are invisible.</p>
+  <div class="brand">Pramaan</div><div class="num">2</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">The scale — government's own numbers</div>
+  <h2>Leakage is measured, acknowledged, funded against</h2>
+  <div class="g4" style="margin-bottom:5mm">
+    <div class="card stat"><div class="n">₹3.48L cr</div><div class="l">cumulative DBT savings from removing leakage</div></div>
+    <div class="card stat"><div class="n">5.2 cr</div><div class="l">fake ration cards purged</div></div>
+    <div class="card stat"><div class="n">830/1,572</div><div class="l">minority institutions found fake or inactive</div></div>
+    <div class="card stat"><div class="n">₹202 cr</div><div class="l">MP Jal Nigam fake bank-guarantee case</div></div>
+  </div>
+  <div class="card tint"><strong>We deliberately do not overclaim this.</strong>
+  DBT's savings came mostly from Aadhaar <em>identity</em> deduplication — removing ghost people — not document forensics.
+  Pramaan targets the complementary gap: the document is fake even though the person is real. No consolidated
+  "MP loses ₹X crore to fake documents" figure exists publicly, and we will not invent one.</div>
+  <div class="brand">Pramaan</div><div class="num">3</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">The solution</div>
+  <h2>Upload a document. Get a defensible verdict.</h2>
+  <div class="g2" style="gap:8mm;flex:1">
+    <div>
+      <ul>
+        <li><strong>Verdict</strong> — Authentic / Suspicious / Likely fake, with a 0–100 risk score</li>
+        <li><strong>Red flags</strong> — each quoting the exact evidence on the document</li>
+        <li><strong>Cross-field logic</strong> — does the arithmetic and the story hold up?</li>
+        <li><strong>Identifier validation</strong> — Aadhaar, PAN, GSTIN, IFSC, IBAN, MRZ checksums</li>
+        <li><strong>12-module forensic dossier</strong> — printable, auditable</li>
+        <li><strong>What it could NOT verify</strong> — stated explicitly, never hidden</li>
+      </ul>
+    </div>
+    <div class="card" style="background:#F8FAFC">
+      <div class="eyebrow" style="margin-bottom:2mm">Sample verdict</div>
+      <div style="display:flex;align-items:center;gap:3mm;margin-bottom:3mm">
+        <span class="pill r">LIKELY FAKE</span><span class="mono" style="font-size:11pt;color:#B91C1C">risk 88</span>
+      </div>
+      <p style="font-size:10.5pt;margin-bottom:2mm"><strong>Income figure re-typed</strong> — baseline drift + weight mismatch over a wiped region</p>
+      <p style="font-size:10.5pt;margin-bottom:2mm"><strong>Serial altered</strong> — localised compression anomaly</p>
+      <p style="font-size:10.5pt;margin-bottom:2mm"><strong>Declared income contradicts bank balance</strong></p>
+      <p style="font-size:10.5pt;color:#B91C1C"><strong>Identifier fails checksum</strong> — mathematically impossible to have been issued</p>
+    </div>
+  </div>
+  <div class="brand">Pramaan</div><div class="num">4</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">How it works</div>
+  <h2>Deterministic facts first. AI reasoning second.</h2>
+  <svg width="100%" viewBox="0 0 900 190" style="margin-top:3mm">
+    <defs><marker id="m" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0l8 4.5-8 4.5z" fill="#94A3B8"/></marker></defs>
+    <rect x="2" y="58" width="140" height="74" rx="11" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"/>
+    <text x="72" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#1E40AF">Upload</text>
+    <text x="72" y="108" text-anchor="middle" font-size="11" fill="#475569">image or PDF</text>
+    <line x1="146" y1="95" x2="188" y2="95" stroke="#94A3B8" stroke-width="2" marker-end="url(#m)"/>
+    <rect x="192" y="24" width="200" height="142" rx="11" fill="#fff" stroke="#E2E8F0" stroke-width="1.5"/>
+    <text x="292" y="50" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">Computed in code</text>
+    <text x="292" y="74" text-anchor="middle" font-size="11" fill="#475569">SHA-256 · PDF producer</text>
+    <text x="292" y="92" text-anchor="middle" font-size="11" fill="#475569">created vs modified · EXIF</text>
+    <text x="292" y="110" text-anchor="middle" font-size="11" fill="#475569">ELA heatmap · QR decode</text>
+    <text x="292" y="136" text-anchor="middle" font-size="12" font-weight="800" fill="#047857">checksums · OFAC</text>
+    <line x1="396" y1="95" x2="438" y2="95" stroke="#94A3B8" stroke-width="2" marker-end="url(#m)"/>
+    <rect x="442" y="24" width="200" height="142" rx="11" fill="#fff" stroke="#E2E8F0" stroke-width="1.5"/>
+    <text x="542" y="50" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">Claude reasons</text>
+    <text x="542" y="74" text-anchor="middle" font-size="11" fill="#475569">typography · layout</text>
+    <text x="542" y="92" text-anchor="middle" font-size="11" fill="#475569">OCR · cross-field logic</text>
+    <text x="542" y="110" text-anchor="middle" font-size="11" fill="#475569">12-module dossier</text>
+    <line x1="646" y1="95" x2="688" y2="95" stroke="#94A3B8" stroke-width="2" marker-end="url(#m)"/>
+    <rect x="692" y="40" width="204" height="110" rx="11" fill="#F5F8FF" stroke="#2563EB" stroke-width="1.5"/>
+    <text x="794" y="70" text-anchor="middle" font-size="14" font-weight="700" fill="#1E40AF">Adversarial court</text>
+    <text x="794" y="92" text-anchor="middle" font-size="11" fill="#475569">prosecution vs defence</text>
+    <text x="794" y="110" text-anchor="middle" font-size="11" fill="#475569">judge rules on evidence</text>
+    <text x="794" y="132" text-anchor="middle" font-size="12" font-weight="800" fill="#0F172A">verdict + evidence</text>
+  </svg>
+  <p style="margin-top:4mm"><strong>The order is the product.</strong> Anything a computer can prove, a computer proves — and the AI is not permitted to argue with it.</p>
+  <div class="brand">Pramaan</div><div class="num">5</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">The differentiator</div>
+  <h2>We made the AI argue with itself</h2>
+  <p class="lead">A single AI pass either cries fraud at every compression artifact, or waves everything through.</p>
+  <div class="g3" style="margin-top:5mm;flex:1">
+    <div class="card" style="background:#FEF2F2;border-color:#FECACA">
+      <span class="pill r">Prosecution</span>
+      <p style="font-size:11pt;margin-top:3mm">Builds the strongest honest case that it is forged — citing only observable evidence.</p>
+    </div>
+    <div class="card" style="background:#ECFDF5;border-color:#A7F3D0">
+      <span class="pill g">Defence</span>
+      <p style="font-size:11pt;margin-top:3mm">Gives the innocent explanation — scanner artifacts, recompression, a legitimate re-save — and exposes overreach.</p>
+    </div>
+    <div class="card tint">
+      <span class="pill" style="background:#EFF6FF;border-color:#DBEAFE;color:#1E40AF">Judge</span>
+      <p style="font-size:11pt;margin-top:3mm">Weighs both against <strong>binding</strong> code-computed facts. Records what was <strong>decisive</strong> — and what it <strong>dismissed</strong>.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:4mm"><strong>That dismissal list is the false-positive guard</strong> — and the officer sees it.
+  A failed checksum cannot be argued away; an OFAC list that failed to download cannot be spun into "clean".</div>
+  <div class="brand">Pramaan</div><div class="num">6</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">Proof</div>
+  <h2>What we actually tested</h2>
+  <table>
+    <tr><th>Claim</th><th>Evidence</th></tr>
+    <tr><td>Identifier validation is real mathematics</td><td><span class="mono">60/60</span> unit tests pass — Verhoeff, PAN, GSTIN mod-36, IFSC, IBAN mod-97, ICAO 9303 MRZ</td></tr>
+    <tr><td>Forensic pipeline runs with no API key</td><td><span class="mono">npm run selftest</span> → 5/5 pass</td></tr>
+    <tr><td>ELA responds to real pixel edits</td><td>mean error <span class="mono">0.196 → 0.264</span> when a splice was introduced</td></tr>
+    <tr><td>Watchlist screening is live, not mocked</td><td>real OFAC SDN export — <span class="mono">19,393</span> records parsed</td></tr>
+  </table>
+  <div class="card" style="margin-top:5mm;border-left:3px solid #EF4444;background:#FEF2F2">
+    <strong>And what we refuse to claim:</strong> Error-Level Analysis is weak on flat, vector-rendered documents — ordinary
+    body text produces as much error as a splice. We report it as one weak indicative signal, never as a verdict.
+    We would rather tell you that than be caught by a judge who knows it.
+  </div>
+  <div class="brand">Pramaan</div><div class="num">7</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">Government fit</div>
+  <h2>What we can connect to — and what it really costs</h2>
+  <table>
+    <tr><th>Source</th><th>What it proves</th><th>Reality</th></tr>
+    <tr><td>Aadhaar offline QR / XML</td><td>Signed identity data vs UIDAI public key</td><td><span class="pill g">Buildable now</span></td></tr>
+    <tr><td>OFAC / UN / EU lists</td><td>Watchlist screening</td><td><span class="pill g">Live today</span></td></tr>
+    <tr><td>ICAO 9303 MRZ</td><td>Passport / ID check digits</td><td><span class="pill g">Shipped</span></td></tr>
+    <tr><td>PAN / GSTIN / MCA / IEC</td><td>Registry existence and status</td><td><span class="pill a">Paid aggregator</span></td></tr>
+    <tr><td>DigiLocker / e-District</td><td><strong>Did this office actually issue it?</strong></td><td><span class="pill r">Needs partnership</span></td></tr>
+  </table>
+  <div class="card tint" style="margin-top:5mm">DigiLocker is the endgame — it turns <em>"internally consistent"</em> into
+  <em>"issued by that office."</em> It needs a government sponsor, which is exactly what a department pilot unlocks.</div>
+  <div class="brand">Pramaan</div><div class="num">8</div>
+</section>
+
+<section class="s">
+  <div class="eyebrow">The ask</div>
+  <h2>One scheme. One department. Real documents.</h2>
+  <p class="lead" style="max-width:250mm">A pilot gives us the two things we cannot generate ourselves: a labelled dataset
+  to calibrate confidence against, and the sponsorship needed for DigiLocker issuer verification.</p>
+  <div class="g2" style="margin-top:6mm">
+    <div class="card"><strong>What we measure</strong>
+      <ul style="margin-top:3mm;font-size:11pt">
+        <li>Fraudulent documents caught that manual review missed</li>
+        <li>False positives — honest applicants wrongly flagged</li>
+        <li>Officer time per application</li>
+        <li>Turnaround, submission to decision</li>
+      </ul>
+    </div>
+    <div class="card tint"><strong>Where it sits</strong>
+      <ul style="margin-top:3mm;font-size:11pt">
+        <li>Counter-level triage — clerk uploads, gets a reason</li>
+        <li>Audit trail — every verdict stores its evidence</li>
+        <li><strong>Officer decides.</strong> Pramaan recommends; it never auto-rejects</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:7mm;font-size:13pt"><strong>github.com/Yashraj00700/pramaan</strong></p>
+  <div class="brand">Pramaan</div><div class="num">9</div>
+</section>
+
+</body></html>
