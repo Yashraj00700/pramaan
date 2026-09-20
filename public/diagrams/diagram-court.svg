@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 660" role="img" aria-labelledby="courtTitle courtDesc">
+  <title id="courtTitle">The adversarial court</title>
+  <desc id="courtDesc">Prosecution and Defence are fed identical evidence and argue opposite cases. Binding facts enter the Judge from the side. The Judge rules, producing what was decisive and what was dismissed.</desc>
+
+  <defs>
+    <marker id="ct-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <marker id="ct-arrow-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0F172A"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="660" fill="#FFFFFF"/>
+
+  <text x="30" y="34" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#0F172A">The adversarial court</text>
+  <text x="30" y="56" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">One pass argues fraud, one argues innocence, from the exact same evidence — a third rules.</text>
+
+  <!-- Evidence -->
+  <rect x="370" y="80" width="360" height="76" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+  <rect x="370" y="80" width="360" height="5" rx="2.5" fill="#2563EB"/>
+  <text x="550" y="111" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">IDENTICAL EVIDENCE</text>
+  <text x="550" y="130" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">document + ELA heatmap + verified metadata</text>
+  <text x="550" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">given to both sides, unedited</text>
+
+  <path d="M400,156 C300,190 210,210 175,238" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#ct-arrow)"/>
+  <path d="M700,156 C800,190 890,210 925,238" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#ct-arrow)"/>
+
+  <!-- Prosecution -->
+  <rect x="45" y="242" width="290" height="180" rx="12" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
+  <text x="190" y="278" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#B91C1C">PROSECUTION</text>
+  <text x="65" y="304" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">Strongest honest case that the</text>
+  <text x="65" y="322" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">document is forged or tampered —</text>
+  <text x="65" y="340" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">observable evidence only.</text>
+  <text x="65" y="368" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#991B1B">Claims are weighted Strong /</text>
+  <text x="65" y="386" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#991B1B">Moderate / Weak — no padding</text>
+  <text x="65" y="404" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#991B1B">for a thin case.</text>
+
+  <!-- Defence -->
+  <rect x="765" y="242" width="290" height="180" rx="12" fill="#ECFDF5" stroke="#10B981" stroke-width="2"/>
+  <text x="910" y="278" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#047857">DEFENCE</text>
+  <text x="785" y="304" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#065F46">The innocent explanation: scanner</text>
+  <text x="785" y="322" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#065F46">artefacts, recompression, a</text>
+  <text x="785" y="340" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#065F46">legitimate re-save, template revision.</text>
+  <text x="785" y="368" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#047857">Points to exactly where the</text>
+  <text x="785" y="386" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#047857">prosecution's case overreaches</text>
+  <text x="785" y="404" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#047857">the evidence.</text>
+
+  <!-- lines into judge -->
+  <path d="M300,422 C340,455 400,468 445,480" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#ct-arrow)"/>
+  <path d="M800,422 C760,455 700,468 655,480" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#ct-arrow)"/>
+
+  <!-- Binding facts, side input -->
+  <rect x="45" y="452" width="270" height="96" rx="10" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2"/>
+  <text x="180" y="476" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#B45309">BINDING, CODE-COMPUTED FACTS</text>
+  <text x="180" y="496" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#92400E">checksum results · OFAC screening</text>
+  <text x="180" y="514" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#92400E">conclusive — not open to</text>
+  <text x="180" y="532" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#92400E">reinterpretation by either side</text>
+
+  <path d="M315,500 L438,500" fill="none" stroke="#F59E0B" stroke-width="2.5" marker-end="url(#ct-arrow)"/>
+
+  <!-- Judge -->
+  <rect x="445" y="452" width="210" height="140" rx="12" fill="#EFF6FF" stroke="#2563EB" stroke-width="2.5"/>
+  <text x="550" y="490" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#1E40AF">JUDGE</text>
+  <text x="550" y="512" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1E3A8A">weighs both cases</text>
+  <text x="550" y="530" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1E3A8A">against the binding facts,</text>
+  <text x="550" y="548" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1E3A8A">then rules on verdict,</text>
+  <text x="550" y="566" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1E3A8A">risk and confidence</text>
+
+  <line x1="500" y1="592" x2="440" y2="620" stroke="#0F172A" stroke-width="2" marker-end="url(#ct-arrow-ink)"/>
+  <line x1="600" y1="592" x2="670" y2="620" stroke="#0F172A" stroke-width="2" marker-end="url(#ct-arrow-ink)"/>
+
+  <!-- Decisive / Dismissed -->
+  <rect x="245" y="622" width="200" height="26" rx="13" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5"/>
+  <text x="345" y="639" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#047857">DECISIVE — drove the verdict</text>
+
+  <rect x="655" y="622" width="260" height="26" rx="13" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="785" y="639" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#334155">DISMISSED — the false-positive guard</text>
+</svg>

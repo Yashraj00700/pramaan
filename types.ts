@@ -127,6 +127,10 @@ export interface AnalysisReport {
   court?: CourtProceedings;
   /** Error-Level Analysis heatmap as a data URL (images only). Display-only: stripped before history is saved. */
   elaImage?: string;
+  /** True while the 12-module dossier and adversarial court are still being expanded in the background. */
+  dossierPending?: boolean;
+  /** Set when the upload was not a document at all, so no verdict is claimed. */
+  notADocument?: boolean;
 }
 
 export interface ScanRecord {

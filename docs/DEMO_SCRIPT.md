@@ -7,11 +7,11 @@
 
 ---
 
-## 1. Hook (20–30 sec)
+## 1. Hook (20 sec)
 
-> "Every year, thousands of scheme applications in Madhya Pradesh — Ladli Behna, scholarships, ration cards, government jobs — are approved on the strength of one thing: a document a clerk has seconds to look at. A caste certificate. An income certificate. A marksheet. Editing any one of those in a photo app takes five minutes and zero skill. Catching it by eye takes a trained forensic examiner — which no front-desk officer is.
+> "We ran an import/export business before this. Every deal starts the same way — the other side sends their documents: registration, bank details, guarantees. We had no real way to check any of it. A single deal ties up eight to twelve months of stock and capital. We got scammed more than once — and the loss was never just the money; it was the months, and the stock held for someone who was never real. By the time it surfaced, the year was gone.
 >
-> This is DocsGuard. Upload any document. Know in seconds if it's real."
+> The check we needed didn't exist. So we built it. This is DocsGuard. Upload any document. Know in seconds if it's real."
 
 ## 2. Story (30–40 sec)
 

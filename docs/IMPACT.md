@@ -4,6 +4,18 @@
 
 ---
 
+## Why this exists
+
+We ran an import/export business before this. Every deal begins the same way: the counterparty sends their documents — company registration, bank details, certificates, guarantees. We received them, and had no real way to verify any of it.
+
+A single export deal takes eight to twelve months to complete. For that entire period we hold stock reserved for that buyer — capital tied up, inventory committed, other buyers turned away. We were scammed more than once, and the loss was never just the money on that deal: it was eight to twelve months of time, and stock held for someone who was never real. By the time the fraud surfaced, the year was gone.
+
+The check we needed did not exist. A clerk, a trader, a bank officer — anyone receiving a document — is expected to judge it by eye. DocsGuard is that check.
+
+The same unverifiable-document gap plays out at far larger scale in Indian public administration — welfare schemes, tenders, and bank onboarding all run on the same blind spot. The figures below quantify that, at the scale government's own reporting acknowledges.
+
+---
+
 ## 1. The fiscal problem
 
 Document fraud in welfare, scholarship, and tender flows is not a hypothetical — it is a documented, recurring pattern in Indian public administration, including in Madhya Pradesh specifically.

@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 780" role="img" aria-labelledby="anatomyTitle anatomyDesc">
+  <title id="anatomyTitle">Anatomy of a caught forgery</title>
+  <desc id="anatomyDesc">A stylised specimen certificate with four callouts: an altered certificate serial, a re-typed income figure, a compression seam visible under Error-Level Analysis, and a printed identifier that fails its official checksum.</desc>
+
+  <defs>
+    <filter id="an-glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="1160" height="780" fill="#FFFFFF"/>
+
+  <text x="30" y="34" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#0F172A">Anatomy of a caught forgery</text>
+  <text x="30" y="56" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">Four independent signals converge on the same tampered income certificate.</text>
+
+  <!-- Certificate paper -->
+  <rect x="66" y="76" width="516" height="654" rx="6" fill="#FBFCFE" stroke="#0F172A" stroke-width="1"/>
+  <rect x="76" y="86" width="496" height="634" rx="4" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+
+  <g transform="translate(500,120) rotate(28)" opacity="0.5">
+    <text text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#EF4444">SPECIMEN</text>
+  </g>
+
+  <text x="324" y="118" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">GOVERNMENT OF MADHYADESH</text>
+  <text x="324" y="137" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">Office of the Sub-Divisional Officer — Sehore</text>
+  <text x="324" y="168" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#0F172A">INCOME CERTIFICATE</text>
+  <line x1="230" y1="177" x2="418" y2="177" stroke="#0F172A" stroke-width="1"/>
+
+  <!-- highlight: serial -->
+  <rect x="105" y="196" width="290" height="30" rx="6" fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="112" y="217" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#334155">Certificate No.: TG/2024/00118</text>
+  <circle cx="105" cy="196" r="13" fill="#F59E0B"/>
+  <text x="105" y="201" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">1</text>
+
+  <text x="112" y="262" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#334155">Name: Ramesh Kumar Sharma</text>
+  <text x="112" y="292" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#334155">Father's Name: Suresh Sharma</text>
+  <text x="112" y="322" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">Address: Village Kothari, Tehsil Sehore, Dist. Sehore</text>
+
+  <!-- ELA glow behind income -->
+  <ellipse cx="250" cy="373" rx="170" ry="30" fill="#EF4444" opacity="0.22" filter="url(#an-glow)"/>
+
+  <!-- highlight: income -->
+  <rect x="105" y="355" width="300" height="38" rx="6" fill="none" stroke="#EF4444" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="112" y="379" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#0F172A">Annual Income: ₹ 48,000</text>
+  <circle cx="105" cy="355" r="13" fill="#EF4444"/>
+  <text x="105" y="360" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">2</text>
+  <circle cx="393" cy="393" r="13" fill="#EF4444"/>
+  <text x="393" y="398" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">3</text>
+
+  <text x="112" y="430" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">Valid Until: 31 Mar 2025      Issued: 12 Apr 2024</text>
+
+  <!-- highlight: reference id -->
+  <rect x="105" y="452" width="320" height="34" rx="6" fill="none" stroke="#EF4444" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="112" y="474" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#334155">Reference ID: 4521 8890 3167</text>
+  <circle cx="105" cy="452" r="13" fill="#EF4444"/>
+  <text x="105" y="457" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">4</text>
+
+  <!-- stamp -->
+  <circle cx="160" cy="640" r="48" fill="none" stroke="#1E40AF" stroke-width="2" stroke-dasharray="4 3" opacity="0.7"/>
+  <text x="160" y="636" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1E40AF">OFFICIAL</text>
+  <text x="160" y="652" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#1E40AF">SEAL</text>
+
+  <!-- signature -->
+  <path d="M340,652 C 360,632 380,668 400,648 C 415,634 430,660 450,644" fill="none" stroke="#0F172A" stroke-width="1.6"/>
+  <line x1="330" y1="662" x2="460" y2="662" stroke="#94A3B8" stroke-width="1"/>
+  <text x="395" y="680" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">Authorised Signatory</text>
+
+  <!-- QR -->
+  <g transform="translate(486,688)">
+    <rect x="0" y="0" width="56" height="56" fill="#FFFFFF" stroke="#0F172A"/>
+    <g fill="#0F172A">
+      <rect x="4" y="4" width="14" height="14"/><rect x="38" y="4" width="14" height="14"/><rect x="4" y="38" width="14" height="14"/>
+      <rect x="8" y="8" width="6" height="6" fill="#FFFFFF"/><rect x="42" y="8" width="6" height="6" fill="#FFFFFF"/><rect x="8" y="42" width="6" height="6" fill="#FFFFFF"/>
+      <rect x="22" y="4" width="4" height="4"/><rect x="30" y="10" width="4" height="4"/><rect x="22" y="22" width="10" height="10"/><rect x="38" y="24" width="4" height="4"/>
+      <rect x="24" y="38" width="4" height="4"/><rect x="34" y="40" width="4" height="4"/><rect x="44" y="34" width="4" height="4"/><rect x="24" y="46" width="4" height="4"/>
+    </g>
+  </g>
+
+  <!-- leader lines -->
+  <path d="M395,211 C 500,180 560,150 650,132" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <path d="M405,373 C 500,320 560,290 650,272" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <path d="M406,393 C 500,440 560,420 650,412" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <path d="M425,469 C 520,540 560,560 650,562" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Card 1: serial -->
+  <rect x="650" y="72" width="450" height="118" rx="10" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2"/>
+  <text x="672" y="100" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#B45309">① ALTERED CERTIFICATE SERIAL</text>
+  <text x="672" y="122" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#78350F">Re-typed in a mono face that does not</text>
+  <text x="672" y="140" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#78350F">match the template's printed font —</text>
+  <text x="672" y="158" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#78350F">kerning and stroke weight both differ.</text>
+  <text x="672" y="178" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#92400E">Signal: typography &amp; layout (reasoned)</text>
+
+  <!-- Card 2: income -->
+  <rect x="650" y="212" width="450" height="118" rx="10" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
+  <text x="672" y="240" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#B91C1C">② RE-TYPED INCOME FIGURE</text>
+  <text x="672" y="262" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">Heavier weight, ~2px baseline drift, and</text>
+  <text x="672" y="280" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">tighter letter-spacing than the surrounding</text>
+  <text x="672" y="298" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">printed text on the same line.</text>
+  <text x="672" y="318" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#991B1B">Signal: typography &amp; layout (reasoned)</text>
+
+  <!-- Card 3: compression seam -->
+  <rect x="650" y="352" width="450" height="118" rx="10" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
+  <text x="672" y="380" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#B91C1C">③ COMPRESSION SEAM</text>
+  <text x="672" y="402" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">The page was aged at JPEG q68, then the</text>
+  <text x="672" y="420" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">edited region was recompressed at q96 —</text>
+  <text x="672" y="438" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">ELA mean error rises sharply right there.</text>
+  <text x="672" y="458" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#991B1B">Signal: Error-Level Analysis (reasoned)</text>
+
+  <!-- Card 4: failed checksum -->
+  <rect x="650" y="492" width="450" height="140" rx="10" fill="#FEF2F2" stroke="#EF4444" stroke-width="3"/>
+  <text x="672" y="522" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#B91C1C">④ FAILED CHECKSUM</text>
+  <text x="672" y="546" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">The printed identifier fails its official</text>
+  <text x="672" y="564" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">check digit. A genuine issuer mathematically</text>
+  <text x="672" y="582" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#7F1D1D">cannot produce this number.</text>
+  <text x="672" y="608" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#B91C1C">Signal: PROVEN — computed in code,</text>
+  <text x="672" y="624" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#B91C1C">binding, overrides everything above</text>
+
+  <text x="30" y="762" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#94A3B8" font-style="italic">Illustrative reconstruction of a caught-forgery pattern — not a real certificate.</text>
+</svg>

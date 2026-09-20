@@ -8,7 +8,13 @@ DocsGuard is a universal AI document-authenticity and fraud-detection web app. I
 
 ## 1. Problem
 
-Madhya Pradesh (and India generally) runs welfare and benefit programs at massive scale — Ladli Behna Yojana, scholarships (post-matric, pre-matric), PDS ration entitlements, caste/income/domicile-linked job and tender reservations. Every one of these programs is gated by a **document upload**: a caste certificate, an income certificate, a domicile certificate, a marksheet, a bank passbook photo.
+We ran an import/export business before building this. Every deal begins the same way: the counterparty sends their documents — company registration, bank details, certificates, guarantees. We received them. We had no real way to verify any of it.
+
+A single export deal takes eight to twelve months to complete. For that entire period we hold stock reserved for that buyer — capital tied up, inventory committed, other buyers turned away. We were scammed more than once, and the loss was never just the money on that deal: it was eight to twelve months of time, and the stock we had held for someone who was never real. By the time the fraud surfaced, the year was gone.
+
+The check we needed did not exist. A clerk, a trader, a bank officer — anyone receiving a document — is expected to judge it by eye. That is the gap DocsGuard closes.
+
+The same gap repeats at far larger scale in Indian government and institutional systems. Madhya Pradesh (and India generally) runs welfare and benefit programs at massive scale — Ladli Behna Yojana, scholarships (post-matric, pre-matric), PDS ration entitlements, caste/income/domicile-linked job and tender reservations. Every one of these programs is gated by a **document upload**: a caste certificate, an income certificate, a domicile certificate, a marksheet, a bank passbook photo.
 
 - **Manual verification does not scale.** A single taluka or block office may process thousands of applications per scheme cycle. Front-desk staff have seconds to eyeball a photocopy or a scanned PDF — they cannot check font consistency, stamp geometry, seal placement, or cross-field arithmetic by hand.
 - **Fraud is common and low-effort.** Editing a scanned certificate in a photo editor (changing an income figure, a caste category, a date of birth) is trivial. Forged bank statements to inflate or deflate declared income are a known problem in subsidy and loan-linked scheme fraud.

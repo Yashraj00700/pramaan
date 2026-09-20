@@ -1,6 +1,6 @@
 import DossierSections from './DossierSections';
 import ExportDossier from './ExportDossier';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence, MotionConfig, animate, useReducedMotion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -20,6 +20,12 @@ import {
   ExternalLink,
   Info,
   ArrowUpRight,
+  Eye,
+  EyeOff,
+  Contrast,
+  Clock,
+  Hash,
+  FileType2,
 } from 'lucide-react';
 import type {
   ScanRecord,
@@ -69,30 +75,37 @@ const VERDICT_STYLES: Record<
   },
 };
 
-const SEVERITY_STYLES: Record<Severity, { chip: string; dot: string; boxBorder: string; boxChip: string }> = {
+const SEVERITY_STYLES: Record<
+  Severity,
+  { chip: string; dot: string; boxBorder: string; boxChip: string; solid: string }
+> = {
   Critical: {
     chip: 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]',
     dot: 'bg-[#EF4444]',
     boxBorder: 'border-[#EF4444]',
     boxChip: 'bg-[#EF4444] text-white',
+    solid: '#EF4444',
   },
   High: {
     chip: 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
     dot: 'bg-[#F97316]',
     boxBorder: 'border-[#F97316]',
     boxChip: 'bg-[#F97316] text-white',
+    solid: '#F97316',
   },
   Medium: {
     chip: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]',
     dot: 'bg-[#F59E0B]',
     boxBorder: 'border-[#F59E0B]',
     boxChip: 'bg-[#F59E0B] text-white',
+    solid: '#F59E0B',
   },
   Low: {
     chip: 'bg-[#F1F5F9] text-[#475569] border-[#E2E8F0]',
     dot: 'bg-[#64748B]',
     boxBorder: 'border-[#64748B]',
     boxChip: 'bg-[#64748B] text-white',
+    solid: '#64748B',
   },
 };
 
@@ -126,6 +139,99 @@ function riskBand(score: number): { color: string; label: string } {
   if (score <= 33) return { color: '#10B981', label: 'Low risk' };
   if (score <= 66) return { color: '#F59E0B', label: 'Elevated risk' };
   return { color: '#EF4444', label: 'High risk' };
+}
+
+const SEVERITY_ORDER: Record<Severity, number> = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+
+/** A red flag annotated with its rank (1 = most severe) once sorted for display. */
+interface NumberedFlag extends RedFlag {
+  number: number;
+}
+
+/** Severity-sorted (Critical → Low), stable on original order within a severity tier. */
+function sortFlagsBySeverity(flags: RedFlag[] | undefined): NumberedFlag[] {
+  if (!flags || flags.length === 0) return [];
+  return flags
+    .map((f, i) => ({ f, i }))
+    .sort((a, b) => SEVERITY_ORDER[a.f.severity] - SEVERITY_ORDER[b.f.severity] || a.i - b.i)
+    .map(({ f }, idx) => ({ ...f, number: idx + 1 }));
+}
+
+const STOPWORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'on', 'is', 'are', 'was',
+  'were', 'with', 'for', 'this', 'that', 'at', 'by', 'as', 'be', 'it', 'its',
+  'has', 'have', 'had', 'not', 'but', 'from', 'which', 'does', 'appears',
+]);
+
+function tokenize(s: string | undefined): Set<string> {
+  if (!s) return new Set();
+  return new Set(
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !STOPWORDS.has(w))
+  );
+}
+
+function overlapScore(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let common = 0;
+  a.forEach((w) => {
+    if (b.has(w)) common += 1;
+  });
+  return common / Math.min(a.size, b.size);
+}
+
+/**
+ * Maps each visual marker to the numbered red flag it most likely illustrates, by lexical
+ * overlap between the marker's label and the flag's title/detail/evidence text (both are
+ * produced independently by the model, so there is no explicit id linking them). Returns
+ * `null` for a marker when no flag clears the confidence floor, so the UI can degrade to an
+ * unnumbered tag rather than guess.
+ */
+function mapMarkersToFlagNumbers(markers: VisualMarker[], flags: NumberedFlag[]): (number | null)[] {
+  if (flags.length === 0) return markers.map(() => null);
+  const flagTokens = flags.map((f) => tokenize(`${f.title} ${f.detail} ${f.evidence}`));
+  const MIN_SCORE = 0.2;
+  return markers.map((m) => {
+    const markerTokens = tokenize(m.label);
+    let bestIdx = -1;
+    let bestScore = 0;
+    flags.forEach((f, idx) => {
+      let score = overlapScore(markerTokens, flagTokens[idx]);
+      if (score > 0 && f.severity === m.severity) score += 0.05;
+      if (score > bestScore) {
+        bestScore = score;
+        bestIdx = idx;
+      }
+    });
+    if (bestIdx === -1 || bestScore < MIN_SCORE) return null;
+    return flags[bestIdx].number;
+  });
+}
+
+function formatScanTime(createdAt: number | undefined): string | null {
+  if (!createdAt || Number.isNaN(createdAt)) return null;
+  try {
+    const d = new Date(createdAt);
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Pulls the raw hex prefix out of a technicalSignals entry like "SHA-256 fingerprint" → "a1b2c3…". */
+function findHashSignal(signals: TechnicalSignal[] | undefined): string | null {
+  if (!signals) return null;
+  const hit = signals.find((s) => /sha-?256|checksum|hash|fingerprint/i.test(s.label));
+  return hit?.value || null;
 }
 
 // ---------- Motion variants ----------
@@ -174,6 +280,13 @@ const PanelTitle: React.FC<{ title: string; icon?: React.ElementType; right?: Re
   </div>
 );
 
+/** 10-11px uppercase, wide-tracked micro-label — the eyebrow/data-caption unit used throughout. */
+const Eyebrow: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <span className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.14em] text-[#94A3B8] ${className}`}>
+    {children}
+  </span>
+);
+
 /** Circular risk-score gauge — stroke fill + number count-up animated via framer-motion. */
 const RiskRing: React.FC<{ score: number }> = ({ score }) => {
   const clamped = Math.max(0, Math.min(100, score));
@@ -198,8 +311,31 @@ const RiskRing: React.FC<{ score: number }> = ({ score }) => {
 
   return (
     <div className="flex flex-col items-center gap-2 shrink-0">
-      <div className="relative w-28 h-28 sm:w-32 sm:h-32">
+      <div className="relative w-32 h-32 sm:w-36 sm:h-36">
         <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+          {/* Tick marks every 10 units — instrument-dial detail, not decoration: they read the same scale the arc fills. */}
+          {Array.from({ length: 20 }).map((_, i) => {
+            const angle = (i / 20) * 360;
+            const major = i % 5 === 0;
+            const r1 = major ? 47 : 49;
+            const r2 = 51.5;
+            const rad = (angle * Math.PI) / 180;
+            const x1 = 50 + r1 * Math.cos(rad);
+            const y1 = 50 + r1 * Math.sin(rad);
+            const x2 = 50 + r2 * Math.cos(rad);
+            const y2 = 50 + r2 * Math.sin(rad);
+            return (
+              <line
+                key={i}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke="#E2E8F0"
+                strokeWidth={major ? 1 : 0.6}
+              />
+            );
+          })}
           <circle cx="50" cy="50" r={radius} fill="none" stroke="#E2E8F0" strokeWidth="8" />
           <motion.circle
             cx="50"
@@ -216,10 +352,10 @@ const RiskRing: React.FC<{ score: number }> = ({ score }) => {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-display text-3xl sm:text-4xl font-extrabold text-[#0F172A] leading-none">
+          <span className="font-display text-3xl sm:text-4xl font-extrabold text-[#0F172A] leading-none tabular-nums">
             {display}
           </span>
-          <span className="text-[10px] text-[#94A3B8] mt-1">Risk / 100</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#94A3B8] mt-1">Risk / 100</span>
         </div>
       </div>
       <span className="text-xs font-semibold" style={{ color }}>
@@ -238,54 +374,164 @@ const MARKER_LEGEND: { severity: Severity; label: string }[] = [
   { severity: 'Low', label: 'Low' },
 ];
 
-const DocumentPreview: React.FC<{ record: ScanRecord }> = ({ record }) => {
+/** Slim ruler caption spelling out the marker coordinate space — a measured-instrument detail, not decoration. */
+const CoordinateRuler: React.FC = () => (
+  <div className="mt-3 px-0.5" aria-hidden>
+    <div className="relative h-3">
+      {[0, 250, 500, 750, 1000].map((v) => (
+        <span
+          key={v}
+          className="absolute top-0 w-px h-2 bg-[#CBD5E1]"
+          style={{ left: `${v / 10}%` }}
+        />
+      ))}
+      <span className="absolute top-0 right-0 w-px h-2 bg-[#CBD5E1]" />
+    </div>
+    <div className="flex justify-between font-mono text-[9px] tabular-nums text-[#94A3B8] leading-none mt-0.5">
+      <span>0</span>
+      <span>250</span>
+      <span>500</span>
+      <span>750</span>
+      <span>1000</span>
+    </div>
+  </div>
+);
+
+const EvidenceToolbar: React.FC<{
+  markerCount: number;
+  showMarkers: boolean;
+  onToggleMarkers: () => void;
+  hasEla: boolean;
+  showEla: boolean;
+  onToggleEla: () => void;
+}> = ({ markerCount, showMarkers, onToggleMarkers, hasEla, showEla, onToggleEla }) => (
+  <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-[#E2E8F0]">
+    <Eyebrow className="mr-0.5">Evidence view</Eyebrow>
+    {markerCount > 0 && (
+      <button
+        type="button"
+        onClick={onToggleMarkers}
+        aria-pressed={showMarkers}
+        className={`inline-flex items-center gap-1.5 min-h-9 px-2.5 py-1 rounded-lg border text-[11px] font-semibold cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-1 ${
+          showMarkers
+            ? 'bg-[#EFF6FF] border-[#DBEAFE] text-[#1E40AF]'
+            : 'bg-white border-[#E2E8F0] text-[#94A3B8] hover:text-[#475569]'
+        }`}
+      >
+        {showMarkers ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+        Markers
+        <span className="font-mono tabular-nums">{markerCount}</span>
+      </button>
+    )}
+    {hasEla && (
+      <button
+        type="button"
+        onClick={onToggleEla}
+        aria-pressed={showEla}
+        className={`inline-flex items-center gap-1.5 min-h-9 px-2.5 py-1 rounded-lg border text-[11px] font-semibold cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-1 ${
+          showEla
+            ? 'bg-[#EFF6FF] border-[#DBEAFE] text-[#1E40AF]'
+            : 'bg-white border-[#E2E8F0] text-[#94A3B8] hover:text-[#475569]'
+        }`}
+      >
+        <Contrast className="w-3.5 h-3.5" />
+        {showEla ? 'ELA heatmap' : 'Original'}
+      </button>
+    )}
+  </div>
+);
+
+const DocumentPreview: React.FC<{ record: ScanRecord; markerNumbers: (number | null)[] }> = ({
+  record,
+  markerNumbers,
+}) => {
   const isImage = record.mediaType?.startsWith('image/');
   const markers: VisualMarker[] = record.report.visualMarkers ?? [];
+  const ela = record.report.elaImage;
+  const prefersReduced = useReducedMotion();
+
+  const [showMarkers, setShowMarkers] = useState(true);
+  const [showEla, setShowEla] = useState(false);
+  const fadeDuration = prefersReduced ? 'duration-0' : 'duration-500';
 
   return (
     <Panel>
       <PanelTitle title="Document Preview" icon={FileText} />
       {isImage && record.thumbnail ? (
         <>
+          {(markers.length > 0 || !!ela) && (
+            <EvidenceToolbar
+              markerCount={markers.length}
+              showMarkers={showMarkers}
+              onToggleMarkers={() => setShowMarkers((v) => !v)}
+              hasEla={!!ela}
+              showEla={showEla}
+              onToggleEla={() => setShowEla((v) => !v)}
+            />
+          )}
           <div className="relative w-full rounded-xl overflow-hidden border border-[#E2E8F0] bg-[#F5F8FF]">
+            <CornerTicks color="#2563EB" />
             <img
               src={record.thumbnail}
               alt={record.fileName}
               className="w-full h-auto block select-none"
               draggable={false}
             />
-            {markers.map((marker, idx) => {
-              const [ymin, xmin, ymax, xmax] = marker.box;
-              const style = SEVERITY_STYLES[marker.severity];
-              return (
-                <div
-                  key={idx}
-                  className={`absolute border-2 ${style.boxBorder} rounded-sm pointer-events-none`}
-                  style={{
-                    top: `${ymin / 10}%`,
-                    left: `${xmin / 10}%`,
-                    height: `${(ymax - ymin) / 10}%`,
-                    width: `${(xmax - xmin) / 10}%`,
-                  }}
-                >
-                  <span
-                    className={`absolute -top-5 left-0 whitespace-nowrap text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.boxChip} shadow-sm`}
+            {ela && (
+              <img
+                src={ela}
+                alt={`${record.fileName} — Error Level Analysis heatmap`}
+                className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-opacity ${fadeDuration}`}
+                style={{ opacity: showEla ? 1 : 0 }}
+                draggable={false}
+              />
+            )}
+            {showMarkers &&
+              markers.map((marker, idx) => {
+                const [ymin, xmin, ymax, xmax] = marker.box;
+                const style = SEVERITY_STYLES[marker.severity];
+                const num = markerNumbers[idx];
+                return (
+                  <div
+                    key={idx}
+                    className={`absolute border-2 ${style.boxBorder} rounded-sm pointer-events-none transition-opacity ${fadeDuration}`}
+                    style={{
+                      top: `${ymin / 10}%`,
+                      left: `${xmin / 10}%`,
+                      height: `${(ymax - ymin) / 10}%`,
+                      width: `${(xmax - xmin) / 10}%`,
+                      opacity: showEla ? 0.35 : 1,
+                    }}
                   >
-                    {marker.label}
-                  </span>
-                </div>
-              );
-            })}
+                    <span
+                      className={`absolute -top-5 left-0 whitespace-nowrap inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.boxChip} shadow-sm`}
+                    >
+                      {num != null && (
+                        <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-black/20 font-mono tabular-nums text-[9px] leading-none">
+                          {num}
+                        </span>
+                      )}
+                      {marker.label}
+                    </span>
+                  </div>
+                );
+              })}
           </div>
           {markers.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-[#E2E8F0]">
-              {MARKER_LEGEND.map(({ severity, label }) => (
-                <div key={severity} className="flex items-center gap-1.5 text-xs text-[#475569]">
-                  <span className={`w-2.5 h-2.5 rounded-sm ${SEVERITY_STYLES[severity].dot}`} />
-                  {label}
-                </div>
-              ))}
-            </div>
+            <>
+              <CoordinateRuler />
+              <div className="flex flex-wrap items-center gap-3 mt-3 pt-4 border-t border-[#E2E8F0]">
+                {MARKER_LEGEND.map(({ severity, label }) => (
+                  <div key={severity} className="flex items-center gap-1.5 text-xs text-[#475569]">
+                    <span className={`w-2.5 h-2.5 rounded-sm ${SEVERITY_STYLES[severity].dot}`} />
+                    {label}
+                  </div>
+                ))}
+                <span className="ml-auto text-[10px] font-mono text-[#94A3B8]">
+                  {markerNumbers.filter((n) => n != null).length}/{markers.length} linked to findings
+                </span>
+              </div>
+            </>
           )}
         </>
       ) : (
@@ -303,7 +549,7 @@ const DocumentPreview: React.FC<{ record: ScanRecord }> = ({ record }) => {
 
 // ---------- Right column sections ----------
 
-const VerdictHero: React.FC<{ record: ScanRecord }> = ({ record }) => {
+const VerdictHero: React.FC<{ record: ScanRecord; topFlag: NumberedFlag | null }> = ({ record, topFlag }) => {
   const { report } = record;
   const style = VERDICT_STYLES[report.verdict];
   const VIcon = style.Icon;
@@ -312,20 +558,21 @@ const VerdictHero: React.FC<{ record: ScanRecord }> = ({ record }) => {
     <Panel>
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
         <div className="min-w-0">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#2563EB]">
+          <Eyebrow className="inline-flex items-center gap-1.5 text-[#2563EB]">
             <FileText className="w-3.5 h-3.5" />
             {report.documentType}
-          </span>
+          </Eyebrow>
           <h2
-            className="font-display mt-2 text-3xl sm:text-4xl font-extrabold leading-[1.05] tracking-tight flex items-center gap-3"
+            className="font-display mt-2 text-4xl sm:text-5xl font-extrabold leading-[0.98] tracking-tight flex items-center gap-3"
             style={{ color: style.solid }}
           >
-            <VIcon className="w-7 h-7 sm:w-8 sm:h-8 shrink-0" style={{ color: style.solid }} />
+            <VIcon className="w-8 h-8 sm:w-9 sm:h-9 shrink-0" style={{ color: style.solid }} />
             {style.label}
           </h2>
           <div className="mt-4 flex items-center gap-3">
             <span className="text-xs font-semibold text-[#475569] shrink-0">
-              Confidence <span className="text-[#0F172A]">{report.confidence}%</span>
+              Confidence{' '}
+              <span className="text-[#0F172A] font-mono tabular-nums">{report.confidence}%</span>
             </span>
             <div className="h-1.5 w-40 max-w-full rounded-full bg-[#E2E8F0] overflow-hidden">
               <motion.div
@@ -339,42 +586,75 @@ const VerdictHero: React.FC<{ record: ScanRecord }> = ({ record }) => {
         </div>
         <RiskRing score={report.riskScore} />
       </div>
+
       {report.summary && (
         <p className="text-[#334155] text-sm leading-relaxed mt-6 pt-6 border-t border-[#E2E8F0]">
           {report.summary}
         </p>
       )}
+
+      {topFlag && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] px-4 py-3">
+          <span
+            className="shrink-0 mt-0.5 inline-flex items-center justify-center w-5 h-5 rounded-full font-mono text-[10px] font-bold text-white tabular-nums"
+            style={{ background: SEVERITY_STYLES[topFlag.severity].solid }}
+          >
+            {topFlag.number}
+          </span>
+          <div className="min-w-0">
+            <Eyebrow className="text-[#94A3B8]">What decided this</Eyebrow>
+            <p className="text-[#0F172A] text-sm font-medium leading-snug mt-0.5">{topFlag.title}</p>
+          </div>
+        </div>
+      )}
     </Panel>
   );
 };
 
-const RedFlagsSection: React.FC<{ flags: RedFlag[] }> = ({ flags }) => {
+const RedFlagsSection: React.FC<{ flags: NumberedFlag[] }> = ({ flags }) => {
   if (!flags || flags.length === 0) return null;
   return (
     <Panel>
-      <PanelTitle title="Red Flags" icon={AlertTriangle} />
+      <PanelTitle
+        title="Red Flags"
+        icon={AlertTriangle}
+        right={<Eyebrow>{flags.length} finding{flags.length === 1 ? '' : 's'}, most severe first</Eyebrow>}
+      />
       <div className="space-y-3">
-        {flags.map((flag, idx) => {
+        {flags.map((flag) => {
           const style = SEVERITY_STYLES[flag.severity];
           return (
-            <div key={idx} className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
-              <div className="flex items-center justify-between gap-3 mb-1.5">
-                <h4 className="text-[#0F172A] font-semibold text-sm">{flag.title}</h4>
-                <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${style.chip}`}>
-                  {flag.severity}
+            <div key={flag.number} className="flex gap-3">
+              <div className="shrink-0 pt-0.5">
+                <span
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-full font-mono text-[11px] font-bold text-white tabular-nums"
+                  style={{ background: style.solid }}
+                >
+                  {flag.number}
                 </span>
               </div>
-              <p className="text-[#475569] text-sm leading-relaxed">{flag.detail}</p>
-              {flag.evidence && (
-                <div
-                  className={`mt-2.5 flex items-start gap-2 rounded-lg bg-white border-l-2 ${style.boxBorder} border-y border-r border-[#E2E8F0] px-3 py-2`}
-                >
-                  <Quote className="w-3.5 h-3.5 text-[#94A3B8] mt-0.5 shrink-0" />
-                  <code className="text-xs text-[#334155] font-mono leading-relaxed break-words">
-                    {flag.evidence}
-                  </code>
+              <div
+                className={`min-w-0 flex-1 rounded-xl border border-l-4 border-[#E2E8F0] bg-[#F8FAFC] p-4`}
+                style={{ borderLeftColor: style.solid }}
+              >
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <h4 className="text-[#0F172A] font-semibold text-sm">{flag.title}</h4>
+                  <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${style.chip}`}>
+                    {flag.severity}
+                  </span>
                 </div>
-              )}
+                <p className="text-[#475569] text-sm leading-relaxed">{flag.detail}</p>
+                {flag.evidence && (
+                  <div
+                    className={`mt-2.5 flex items-start gap-2 rounded-lg bg-white border-l-2 ${style.boxBorder} border-y border-r border-[#E2E8F0] px-3 py-2`}
+                  >
+                    <Quote className="w-3.5 h-3.5 text-[#94A3B8] mt-0.5 shrink-0" />
+                    <code className="text-xs text-[#334155] font-mono leading-relaxed break-words">
+                      {flag.evidence}
+                    </code>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
@@ -490,7 +770,7 @@ const TechnicalSignalsSection: React.FC<{ signals: TechnicalSignal[] }> = ({ sig
                 <dd
                   title={mono ? s.value : undefined}
                   className={`text-sm mt-0.5 break-words ${
-                    mono ? 'font-mono text-xs text-[#334155]' : 'text-[#0F172A]'
+                    mono ? 'font-mono text-xs text-[#334155] tabular-nums' : 'text-[#0F172A]'
                   } ${s.concern ? 'font-semibold text-[#B91C1C]' : ''}`}
                 >
                   {mono ? truncateMono(s.value) : s.value}
@@ -544,10 +824,49 @@ const ExternalChecksSection: React.FC<{ items: string[] }> = ({ items }) => {
   );
 };
 
+/** Quiet mono footer: the case's chain-of-custody strip. Every field degrades independently. */
+const AnalysisMetadataFooter: React.FC<{ record: ScanRecord }> = ({ record }) => {
+  const scanTime = formatScanTime(record.createdAt);
+  const hash = findHashSignal(record.report.technicalSignals);
+
+  const items: { icon: React.ElementType; label: string; value: string }[] = [];
+  if (record.fileName) items.push({ icon: FileText, label: 'File', value: record.fileName });
+  if (record.mediaType) items.push({ icon: FileType2, label: 'Media type', value: record.mediaType });
+  if (scanTime) items.push({ icon: Clock, label: 'Scanned', value: scanTime });
+  if (hash) items.push({ icon: Hash, label: 'SHA-256', value: hash });
+
+  if (items.length === 0) return null;
+
+  return (
+    <motion.div variants={itemVariants} className="mt-2">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-1">
+        {items.map(({ icon: Icon, label, value }) => (
+          <div key={label} className="flex items-center gap-1.5 min-w-0">
+            <Icon className="w-3 h-3 text-[#94A3B8] shrink-0" aria-hidden />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#94A3B8] shrink-0">
+              {label}
+            </span>
+            <span className="text-[11px] font-mono text-[#475569] truncate max-w-[16rem]" title={value}>
+              {value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
 // ---------- Main component ----------
 
 const ResultView: React.FC<ResultViewProps> = ({ record, onNewScan, onBack }) => {
   const { report } = record;
+
+  const sortedFlags = useMemo(() => sortFlagsBySeverity(report.redFlags), [report.redFlags]);
+  const markerNumbers = useMemo(
+    () => mapMarkersToFlagNumbers(report.visualMarkers ?? [], sortedFlags),
+    [report.visualMarkers, sortedFlags]
+  );
+  const topFlag = sortedFlags.length > 0 ? sortedFlags[0] : null;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -606,18 +925,19 @@ const ResultView: React.FC<ResultViewProps> = ({ record, onNewScan, onBack }) =>
             >
               {/* LEFT */}
               <div className="lg:sticky lg:top-24">
-                <DocumentPreview record={record} />
+                <DocumentPreview record={record} markerNumbers={markerNumbers} />
               </div>
 
               {/* RIGHT */}
               <div className="space-y-6 min-w-0">
-                <VerdictHero record={record} />
+                <VerdictHero record={record} topFlag={topFlag} />
                 <ConsistencyChecksSection checks={report.consistencyChecks} />
-                <RedFlagsSection flags={report.redFlags} />
+                <RedFlagsSection flags={sortedFlags} />
                 <ExtractedFieldsSection fields={report.extractedFields} />
                 <TechnicalSignalsSection signals={report.technicalSignals} />
                 <RecommendedActionSection action={report.recommendedAction} />
                 <ExternalChecksSection items={report.externalChecksNeeded} />
+                <AnalysisMetadataFooter record={record} />
               </div>
             </motion.div>
           </AnimatePresence>

@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 940" role="img" aria-labelledby="pipelineTitle pipelineDesc">
+  <title id="pipelineTitle">DocsGuard analysis pipeline</title>
+  <desc id="pipelineDesc">Upload flows through a deterministic signal layer and Pass A, then fans out into three concurrent passes (module group B, module group C, and the adversarial court), which merge into a dossier that a binding checksum override can only push toward higher risk, producing the final verdict.</desc>
+
+  <defs>
+    <marker id="pl-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <marker id="pl-arrow-amber" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#F59E0B"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1320" height="940" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <text x="30" y="34" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#0F172A">DocsGuard analysis pipeline</text>
+  <text x="30" y="56" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">Deterministic facts are computed first. The model is never allowed to argue with them.</text>
+
+  <!-- Upload -->
+  <rect x="30" y="435" width="140" height="80" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+  <rect x="30" y="435" width="140" height="5" rx="2.5" fill="#2563EB"/>
+  <text x="100" y="470" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">Upload</text>
+  <text x="100" y="489" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">image or PDF</text>
+
+  <line x1="170" y1="475" x2="205" y2="475" stroke="#475569" stroke-width="2" marker-end="url(#pl-arrow)"/>
+
+  <!-- Deterministic layer -->
+  <rect x="210" y="370" width="270" height="210" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+  <rect x="210" y="370" width="270" height="5" rx="2.5" fill="#1E40AF"/>
+  <text x="345" y="401" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">Deterministic layer</text>
+  <text x="345" y="419" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">computed in code, not guessed</text>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">
+    <text x="235" y="447">•  SHA-256 fingerprint</text>
+    <text x="235" y="472">•  PDF producer + created/modified</text>
+    <text x="235" y="497">•  EXIF editor-software tags</text>
+    <text x="235" y="522">•  ELA tamper heatmap</text>
+    <text x="235" y="547">•  QR / barcode decode</text>
+  </g>
+
+  <line x1="480" y1="475" x2="515" y2="475" stroke="#475569" stroke-width="2" marker-end="url(#pl-arrow)"/>
+
+  <!-- Pass A -->
+  <rect x="520" y="435" width="190" height="80" rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"/>
+  <rect x="520" y="435" width="190" height="5" rx="2.5" fill="#2563EB"/>
+  <text x="615" y="466" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">PASS A</text>
+  <text x="615" y="485" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">Claude core verdict</text>
+  <text x="615" y="502" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">(sequential)</text>
+
+  <!-- Concurrent container -->
+  <text x="895" y="102" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E40AF">RUN CONCURRENTLY — Promise.allSettled</text>
+  <rect x="745" y="112" width="300" height="726" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5" stroke-dasharray="6 5"/>
+
+  <!-- fan-out from Pass A -->
+  <path d="M710,462 C737,462 733,200 760,200" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#pl-arrow)"/>
+  <path d="M710,475 L753,475" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#pl-arrow)"/>
+  <path d="M710,488 C737,488 733,750 760,750" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#pl-arrow)"/>
+
+  <!-- Lane B -->
+  <rect x="760" y="130" width="270" height="140" rx="10" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+  <rect x="760" y="130" width="270" height="5" rx="2.5" fill="#2563EB"/>
+  <text x="895" y="158" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">PASS B — modules 1–6</text>
+  <g text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">
+    <text x="895" y="182">Executive · Forensics</text>
+    <text x="895" y="200">Typography · Content</text>
+    <text x="895" y="218">Identity · Security</text>
+  </g>
+  <text x="895" y="248" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#64748B">grounded in Pass-A findings</text>
+
+  <!-- Lane C -->
+  <rect x="760" y="405" width="270" height="140" rx="10" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+  <rect x="760" y="405" width="270" height="5" rx="2.5" fill="#2563EB"/>
+  <text x="895" y="433" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">PASS C — modules 7–12</text>
+  <g text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">
+    <text x="895" y="457">Issuer · Financial</text>
+    <text x="895" y="475">Compliance · Screening</text>
+    <text x="895" y="493">Predictive · Verdict</text>
+  </g>
+  <text x="895" y="523" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#64748B">grounded in Pass-A findings</text>
+
+  <!-- Lane D -->
+  <rect x="760" y="680" width="270" height="140" rx="10" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+  <rect x="760" y="680" width="270" height="5" rx="2.5" fill="#2563EB"/>
+  <text x="895" y="708" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">PASS D — adversarial court</text>
+  <g text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">
+    <text x="895" y="732">Prosecution vs. Defence</text>
+    <text x="895" y="750">ruled by an independent Judge</text>
+  </g>
+  <text x="895" y="798" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#64748B">same document + binding facts</text>
+
+  <!-- fan-in to merge -->
+  <path d="M1030,200 C1058,200 1062,475 1090,475" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#pl-arrow)"/>
+  <path d="M1030,475 L1083,475" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#pl-arrow)"/>
+  <path d="M1030,750 C1058,750 1062,475 1090,475" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#pl-arrow)"/>
+
+  <!-- Merge -->
+  <rect x="1090" y="405" width="200" height="140" rx="10" fill="#FFFFFF" stroke="#1E40AF" stroke-width="1.5"/>
+  <rect x="1090" y="405" width="200" height="5" rx="2.5" fill="#1E40AF"/>
+  <text x="1190" y="443" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">Merged</text>
+  <text x="1190" y="463" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">12-module dossier</text>
+  <text x="1190" y="481" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">+ court ruling</text>
+  <text x="1190" y="499" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">+ any gaps synthesized</text>
+
+  <line x1="1190" y1="545" x2="1190" y2="578" stroke="#475569" stroke-width="2" marker-end="url(#pl-arrow)"/>
+
+  <!-- Override gate -->
+  <rect x="1090" y="583" width="200" height="152" rx="10" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2.5"/>
+  <text x="1190" y="611" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">BINDING OVERRIDE</text>
+  <text x="1190" y="629" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">applied LAST</text>
+  <g text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">
+    <text x="1190" y="651">Aadhaar · PAN · GSTIN</text>
+    <text x="1190" y="669">IFSC · IBAN · MRZ checksums</text>
+  </g>
+  <text x="1190" y="697" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#B45309">CAN ONLY RAISE RISK,</text>
+  <text x="1190" y="714" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#B45309">NEVER LOWER IT</text>
+
+  <line x1="1190" y1="735" x2="1190" y2="778" stroke="#F59E0B" stroke-width="2.5" marker-end="url(#pl-arrow-amber)"/>
+
+  <!-- Verdict -->
+  <rect x="1090" y="783" width="200" height="95" rx="10" fill="#FFFFFF" stroke="#0F172A" stroke-width="1.5"/>
+  <rect x="1090" y="783" width="200" height="5" rx="2.5" fill="#0F172A"/>
+  <text x="1190" y="816" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#0F172A">Verdict + evidence</text>
+  <text x="1190" y="835" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">+ what could NOT</text>
+  <text x="1190" y="853" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">be verified</text>
+
+  <!-- Legend -->
+  <g font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569">
+    <rect x="30" y="905" width="16" height="16" rx="3" fill="#2563EB"/>
+    <text x="52" y="918">sequential / concurrent step</text>
+    <rect x="260" y="905" width="16" height="16" rx="3" fill="#F8FAFC" stroke="#E2E8F0"/>
+    <text x="282" y="918">runs concurrently</text>
+    <rect x="450" y="905" width="16" height="16" rx="3" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2"/>
+    <text x="472" y="918">binding, code-computed override</text>
+  </g>
+</svg>
