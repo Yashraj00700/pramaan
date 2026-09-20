@@ -53,6 +53,7 @@ export async function analyzeDocument(file: File): Promise<AnalysisReport> {
       fileBase64,
       mediaType: file.type || "image/png",
       fileName: file.name,
+      mode: "core",
       }),
     });
   } catch (e: unknown) {
@@ -76,4 +77,39 @@ export async function analyzeDocument(file: File): Promise<AnalysisReport> {
   }
 
   return json.report as AnalysisReport;
+}
+
+/**
+ * Second stage: expand a returned core report into the full 12-module dossier and
+ * the adversarial court. Deliberately separate so the user sees a verdict in
+ * seconds instead of waiting for twelve narratives to be written.
+ * Best-effort — a failure here leaves the core verdict intact.
+ */
+export async function fetchDossier(file: File, report: AnalysisReport): Promise<AnalysisReport | null> {
+  try {
+    const fileBase64 = await fileToBase64(file);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ANALYSIS_TIMEOUT_MS);
+    try {
+      const res = await fetch("/api/analyze", {
+        signal: controller.signal,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileBase64,
+          mediaType: file.type || "image/png",
+          fileName: file.name,
+          mode: "dossier",
+          report,
+        }),
+      });
+      if (!res.ok) return null;
+      const json = await res.json().catch(() => ({}));
+      return (json?.report as AnalysisReport) ?? null;
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    return null;
+  }
 }

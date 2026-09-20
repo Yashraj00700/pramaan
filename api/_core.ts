@@ -49,6 +49,16 @@ export interface AnalyzeInput {
   fileBase64: string;
   mediaType: string;
   fileName: string;
+  /**
+   * 'core'    — verdict, risk, fields, checks only. Returns in roughly a third of
+   *             the time, because the twelve module narratives are what cost.
+   * 'dossier' — skips Pass A and expands an already-returned core report into the
+   *             full 12-module dossier plus the adversarial court.
+   * 'full'    — both, in one request (the original behaviour; default).
+   */
+  mode?: 'core' | 'dossier' | 'full';
+  /** Required for mode 'dossier': the core report to expand. */
+  baseReport?: any;
   apiKey?: string;
 }
 
@@ -658,8 +668,15 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
     userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } });
   }
 
+  const mode = input.mode || 'full';
+
   // ---- PASS A: fast core (sequential — everything else needs this result) ----
-  const report: any = await runPassA(client, effort, webMax, userContent, metaText);
+  // In 'dossier' mode Pass A already ran in an earlier request; reuse it rather
+  // than paying for it twice.
+  const report: any =
+    mode === 'dossier' && input.baseReport
+      ? input.baseReport
+      : await runPassA(client, effort, webMax, userContent, metaText);
 
   // GUARD: if this is not a document, stop here. Running a forensic dossier on a
   // selfie would produce an authoritative-looking verdict about nothing, which is
@@ -774,6 +791,14 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
       ? `- ${hardFailures} identifier(s) FAILED official checksum validation. This is mathematical proof the number could not have been issued by the real authority.`
       : '- No identifier failed checksum validation.',
   ].join('\n');
+
+  // In 'core' mode we stop here: the caller gets a usable verdict fast and can
+  // request the dossier separately, so the user is never left staring at a spinner
+  // while twelve narratives are written.
+  if (mode === 'core') {
+    report.dossierPending = true;
+    return report;
+  }
 
   // ---- PASS B, C, D — CONCURRENT ---------------------------------------------
   // Two dossier-module groups and the adversarial court all run at once, each fed

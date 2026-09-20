@@ -32,7 +32,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Only transient failures (429 / 5xx / overloaded / network / timeout) are
     // retried; a 4xx from the provider fails fast on the first attempt.
-    const report = await withRetry(() => analyze({ fileBase64, mediaType, fileName }));
+    const { mode, report: baseReport } = (req.body || {}) as { mode?: 'core' | 'dossier' | 'full'; report?: unknown };
+    const report = await withRetry(() =>
+      analyze({ fileBase64, mediaType, fileName, mode, baseReport }),
+    );
     return res.status(200).json({ report });
   } catch (e: unknown) {
     // Log the real error server-side for debugging...
