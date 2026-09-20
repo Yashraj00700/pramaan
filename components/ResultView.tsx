@@ -241,9 +241,15 @@ const containerVariants = {
   show: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
 };
 
+// Cards settle in with a subtle spring rather than a linear/eased tween — engineered,
+// not bouncy: modest stiffness, generous damping, tiny overshoot at most.
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 260, damping: 26, mass: 0.9 },
+  },
 };
 
 // ---------- Small building blocks ----------
@@ -452,7 +458,6 @@ const DocumentPreview: React.FC<{ record: ScanRecord; markerNumbers: (number | n
 
   const [showMarkers, setShowMarkers] = useState(true);
   const [showEla, setShowEla] = useState(false);
-  const fadeDuration = prefersReduced ? 'duration-0' : 'duration-500';
 
   return (
     <Panel>
@@ -477,45 +482,62 @@ const DocumentPreview: React.FC<{ record: ScanRecord; markerNumbers: (number | n
               className="w-full h-auto block select-none"
               draggable={false}
             />
-            {ela && (
-              <img
-                src={ela}
-                alt={`${record.fileName} — Error Level Analysis heatmap`}
-                className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-opacity ${fadeDuration}`}
-                style={{ opacity: showEla ? 1 : 0 }}
-                draggable={false}
-              />
-            )}
-            {showMarkers &&
-              markers.map((marker, idx) => {
-                const [ymin, xmin, ymax, xmax] = marker.box;
-                const style = SEVERITY_STYLES[marker.severity];
-                const num = markerNumbers[idx];
-                return (
-                  <div
-                    key={idx}
-                    className={`absolute border-2 ${style.boxBorder} rounded-sm pointer-events-none transition-opacity ${fadeDuration}`}
-                    style={{
-                      top: `${ymin / 10}%`,
-                      left: `${xmin / 10}%`,
-                      height: `${(ymax - ymin) / 10}%`,
-                      width: `${(xmax - xmin) / 10}%`,
-                      opacity: showEla ? 0.35 : 1,
-                    }}
-                  >
-                    <span
-                      className={`absolute -top-5 left-0 whitespace-nowrap inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.boxChip} shadow-sm`}
+            <AnimatePresence>
+              {ela && showEla && (
+                <motion.img
+                  key="ela"
+                  src={ela}
+                  alt={`${record.fileName} — Error Level Analysis heatmap`}
+                  className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
+                  draggable={false}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: prefersReduced ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }}
+                />
+              )}
+            </AnimatePresence>
+            <AnimatePresence>
+              {showMarkers &&
+                markers.map((marker, idx) => {
+                  const [ymin, xmin, ymax, xmax] = marker.box;
+                  const style = SEVERITY_STYLES[marker.severity];
+                  const num = markerNumbers[idx];
+                  // Sequenced by rank (1 = most severe) so the eye is led marker-by-marker
+                  // toward the matching numbered red flag below, in the same order.
+                  const seqDelay = prefersReduced ? 0 : (num != null ? (num - 1) : markers.length + idx) * 0.09;
+                  return (
+                    <motion.div
+                      key={idx}
+                      className={`absolute border-2 ${style.boxBorder} rounded-sm pointer-events-none`}
+                      style={{
+                        top: `${ymin / 10}%`,
+                        left: `${xmin / 10}%`,
+                        height: `${(ymax - ymin) / 10}%`,
+                        width: `${(xmax - xmin) / 10}%`,
+                      }}
+                      initial={{ opacity: 0, scale: 0.85 }}
+                      animate={{ opacity: showEla ? 0.35 : 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{
+                        opacity: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                        scale: { type: 'spring', stiffness: 420, damping: 26, delay: seqDelay },
+                      }}
                     >
-                      {num != null && (
-                        <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-black/20 font-mono tabular-nums text-[9px] leading-none">
-                          {num}
-                        </span>
-                      )}
-                      {marker.label}
-                    </span>
-                  </div>
-                );
-              })}
+                      <span
+                        className={`absolute -top-5 left-0 whitespace-nowrap inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.boxChip} shadow-sm`}
+                      >
+                        {num != null && (
+                          <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-black/20 font-mono tabular-nums text-[9px] leading-none">
+                            {num}
+                          </span>
+                        )}
+                        {marker.label}
+                      </span>
+                    </motion.div>
+                  );
+                })}
+            </AnimatePresence>
           </div>
           {markers.length > 0 && (
             <>
@@ -562,13 +584,23 @@ const VerdictHero: React.FC<{ record: ScanRecord; topFlag: NumberedFlag | null }
             <FileText className="w-3.5 h-3.5" />
             {report.documentType}
           </Eyebrow>
-          <h2
+          <motion.h2
             className="font-display mt-2 text-4xl sm:text-5xl font-extrabold leading-[0.98] tracking-tight flex items-center gap-3"
             style={{ color: style.solid }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 24, delay: 0.06 }}
           >
-            <VIcon className="w-8 h-8 sm:w-9 sm:h-9 shrink-0" style={{ color: style.solid }} />
+            <motion.span
+              className="inline-flex shrink-0"
+              initial={{ opacity: 0, scale: 0.75 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.14 }}
+            >
+              <VIcon className="w-8 h-8 sm:w-9 sm:h-9" style={{ color: style.solid }} />
+            </motion.span>
             {style.label}
-          </h2>
+          </motion.h2>
           <div className="mt-4 flex items-center gap-3">
             <span className="text-xs font-semibold text-[#475569] shrink-0">
               Confidence{' '}
@@ -576,9 +608,9 @@ const VerdictHero: React.FC<{ record: ScanRecord; topFlag: NumberedFlag | null }
             </span>
             <div className="h-1.5 w-40 max-w-full rounded-full bg-[#E2E8F0] overflow-hidden">
               <motion.div
-                className="h-full rounded-full bg-[#2563EB]"
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.max(0, Math.min(100, report.confidence))}%` }}
+                className="h-full w-full rounded-full bg-[#2563EB] origin-left"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: Math.max(0, Math.min(100, report.confidence)) / 100 }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
               />
             </div>
@@ -620,11 +652,23 @@ const RedFlagsSection: React.FC<{ flags: NumberedFlag[] }> = ({ flags }) => {
         icon={AlertTriangle}
         right={<Eyebrow>{flags.length} finding{flags.length === 1 ? '' : 's'}, most severe first</Eyebrow>}
       />
-      <div className="space-y-3">
+      <motion.div
+        className="space-y-3"
+        initial="hidden"
+        animate="show"
+        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } } }}
+      >
         {flags.map((flag) => {
           const style = SEVERITY_STYLES[flag.severity];
           return (
-            <div key={flag.number} className="flex gap-3">
+            <motion.div
+              key={flag.number}
+              className="flex gap-3"
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 320, damping: 28 } },
+              }}
+            >
               <div className="shrink-0 pt-0.5">
                 <span
                   className="inline-flex items-center justify-center w-6 h-6 rounded-full font-mono text-[11px] font-bold text-white tabular-nums"
@@ -655,10 +699,10 @@ const RedFlagsSection: React.FC<{ flags: NumberedFlag[] }> = ({ flags }) => {
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </Panel>
   );
 };

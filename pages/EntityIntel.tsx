@@ -8,6 +8,7 @@ import {
   Search,
   ShieldAlert,
   ShieldQuestion,
+  Sparkles,
   User,
   XCircle,
 } from 'lucide-react';
@@ -55,6 +56,16 @@ const plausibilityStyle: Record<EntityAssessment['plausibility'], { label: strin
   UNCERTAIN: { label: 'Uncertain', className: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]', icon: ShieldQuestion },
   IMPLAUSIBLE: { label: 'Implausible name', className: 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]', icon: AlertTriangle },
 };
+
+// Example queries the user can click to run immediately — a mix of a plausible
+// registered-sounding company and person name, so a first-time visitor sees the
+// full result shape (OFAC screening, assessment, live-verification list)
+// without having to think of a name to type.
+const EXAMPLE_QUERIES: Array<{ name: string; kind: EntityKind }> = [
+  { name: 'Acme Trading Private Limited', kind: 'company' },
+  { name: 'Rohan Sharma', kind: 'person' },
+  { name: 'Silk Road Exports LLC', kind: 'company' },
+];
 
 async function lookupEntity(name: string, kind: EntityKind): Promise<EntityIntelResponse> {
   const response = await fetch('/api/entity', {
@@ -110,24 +121,34 @@ const EntityIntel: React.FC = () => {
   const [result, setResult] = useState<EntityIntelResponse | null>(null);
   const inputId = useId();
 
-  const runLookup = useCallback(async () => {
-    const trimmed = name.trim();
-    if (!trimmed || status === 'loading') return;
-    setStatus('loading');
-    setErrorMsg('');
-    try {
-      const res = await lookupEntity(trimmed, kind);
-      setResult(res);
-      setStatus('done');
-    } catch (e: any) {
-      setErrorMsg(e?.message || 'Lookup failed. Please try again.');
-      setStatus('error');
-    }
-  }, [name, kind, status]);
+  const runLookup = useCallback(
+    async (overrideName?: string, overrideKind?: EntityKind) => {
+      const trimmed = (overrideName ?? name).trim();
+      const useKind = overrideKind ?? kind;
+      if (!trimmed || status === 'loading') return;
+      setStatus('loading');
+      setErrorMsg('');
+      try {
+        const res = await lookupEntity(trimmed, useKind);
+        setResult(res);
+        setStatus('done');
+      } catch (e: any) {
+        setErrorMsg(e?.message || 'Lookup failed. Please try again.');
+        setStatus('error');
+      }
+    },
+    [name, kind, status],
+  );
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     void runLookup();
+  };
+
+  const runExample = (example: { name: string; kind: EntityKind }) => {
+    setName(example.name);
+    setKind(example.kind);
+    void runLookup(example.name, example.kind);
   };
 
   const failCount = result?.screening.checks.filter((c) => c.status === 'FAIL').length ?? 0;
@@ -174,12 +195,41 @@ const EntityIntel: React.FC = () => {
             Search
           </button>
         </div>
+
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          <span className="inline-flex items-center gap-1 text-xs text-[#94A3B8]">
+            <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+            Try:
+          </span>
+          {EXAMPLE_QUERIES.map((ex) => (
+            <button
+              key={ex.name}
+              type="button"
+              disabled={status === 'loading'}
+              onClick={() => runExample(ex)}
+              className="rounded-full border border-[#E2E8F0] bg-white text-[#475569] text-xs font-medium px-3 py-1.5 hover:border-[#2563EB] hover:text-[#2563EB] hover:bg-[#EFF6FF] cursor-pointer transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]"
+            >
+              {ex.name}
+            </button>
+          ))}
+        </div>
       </form>
+
+      {/* Honesty framing — prominent, not fine print: what this page can and cannot confirm. */}
+      <div className="rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] px-5 py-4 flex items-start gap-3 mb-8">
+        <ShieldQuestion className="w-5 h-5 text-[#2563EB] shrink-0 mt-0.5" aria-hidden="true" />
+        <p className="text-sm text-[#1E40AF] leading-relaxed">
+          <strong className="font-semibold">This is a screening aid, not a verified identity check.</strong> It
+          runs a real name-match against the US Treasury OFAC list and reads the name text for plausibility —
+          it does not confirm the entity exists, is registered, or is who it claims to be. Every result names
+          exactly what still needs a live authority lookup before you act on it.
+        </p>
+      </div>
 
       {status === 'idle' && (
         <div className="rounded-2xl border border-dashed border-[#E2E8F0] bg-[#F5F8FF] px-6 py-12 text-center">
           <ShieldQuestion className="w-8 h-8 text-[#94A3B8] mx-auto mb-3" aria-hidden="true" />
-          <p className="text-sm text-[#475569]">Enter a name above to run a screening.</p>
+          <p className="text-sm text-[#475569]">Enter a name above, or click an example, to run a screening.</p>
         </div>
       )}
 

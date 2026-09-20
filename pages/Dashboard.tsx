@@ -1,16 +1,17 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, useInView } from 'framer-motion';
 import {
   LayoutDashboard,
   ScanLine,
   Gauge,
   KeyRound,
-  Flag,
+  Percent,
   ArrowUpRight,
   ArrowRight,
   Clock,
   FileText,
+  TrendingUp,
   ShieldCheck,
   ShieldAlert,
   ShieldX,
@@ -88,12 +89,21 @@ const formatRelativeTime = (timestamp: number): string => {
   return new Date(timestamp).toLocaleDateString();
 };
 
+interface RiskPoint {
+  id: string;
+  createdAt: number;
+  riskScore: number;
+  verdict: Verdict;
+}
+
 interface DashboardStats {
   total: number;
   verdictCounts: Record<Verdict, number>;
+  flaggedShare: number; // % of scans with verdict SUSPICIOUS or LIKELY_FAKE
   averageRisk: number;
   failedChecksumCount: number;
   topRedFlags: Array<{ title: string; count: number }>;
+  riskSeries: RiskPoint[]; // chronological (oldest → newest), for the sparkline
 }
 
 /** Derives every dashboard figure from stored records. Never invents numbers. */
@@ -127,23 +137,72 @@ function computeStats(records: ScanRecord[]): DashboardStats {
     .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title))
     .slice(0, 5);
 
+  const flaggedCount = verdictCounts.SUSPICIOUS + verdictCounts.LIKELY_FAKE;
+
+  const riskSeries: RiskPoint[] = records
+    .filter((r) => Number.isFinite(r.report?.riskScore))
+    .map((r) => ({ id: r.id, createdAt: r.createdAt, riskScore: r.report.riskScore, verdict: r.report.verdict }))
+    .sort((a, b) => a.createdAt - b.createdAt);
+
   return {
     total: records.length,
     verdictCounts,
+    flaggedShare: records.length ? Math.round((flaggedCount / records.length) * 100) : 0,
     averageRisk: records.length ? Math.round(riskSum / records.length) : 0,
     failedChecksumCount,
     topRedFlags,
+    riskSeries,
   };
 }
 
-/** A single portfolio-level number with an icon, used across the top stat row. */
+/** Counts a number up from 0 the first time it scrolls into view, then holds. Jumps straight to
+ *  the target under reduced motion. Always renders with tabular-nums. */
+const CountUp: React.FC<{ value: number; suffix?: string; className?: string }> = ({
+  value,
+  suffix = '',
+  className = '',
+}) => {
+  const reducedMotion = useReducedMotion();
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-40px' });
+  const [display, setDisplay] = useState(reducedMotion ? value : 0);
+
+  useEffect(() => {
+    if (!inView) return;
+    if (reducedMotion) {
+      setDisplay(value);
+      return;
+    }
+    const duration = 900;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(value * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, value, reducedMotion]);
+
+  return (
+    <span ref={ref} className={`tabular-nums ${className}`}>
+      {Math.round(display)}
+      {suffix}
+    </span>
+  );
+};
+
+/** A single portfolio-level number with an icon, used across the top stat row. Animates in with CountUp. */
 const StatCard: React.FC<{
   icon: React.ElementType;
   label: string;
-  value: string;
+  value: number;
+  suffix?: string;
   hint: string;
   accent?: string;
-}> = ({ icon: Icon, label, value, hint, accent = '#2563EB' }) => (
+}> = ({ icon: Icon, label, value, suffix = '', hint, accent = '#2563EB' }) => (
   <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_10px_30px_-14px_rgba(15,23,42,0.10)] p-5 hover:shadow-[0_16px_36px_-14px_rgba(15,23,42,0.16)] hover:-translate-y-0.5 transition-all duration-200">
     <div className="flex items-center gap-2 mb-3">
       <span
@@ -154,10 +213,98 @@ const StatCard: React.FC<{
       </span>
       <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#94A3B8]">{label}</span>
     </div>
-    <p className="font-display font-extrabold text-3xl text-[#0F172A] tabular-nums leading-none">{value}</p>
+    <p className="font-display font-extrabold text-3xl text-[#0F172A] leading-none">
+      <CountUp value={value} suffix={suffix} />
+    </p>
     <p className="text-xs text-[#475569] mt-2 leading-relaxed">{hint}</p>
   </div>
 );
+
+/** Risk-over-time sparkline — an inline SVG polyline built from createdAt/riskScore across every
+ *  saved scan, oldest to newest. No chart library; points are colour-coded by verdict. */
+const RiskSparkline: React.FC<{ series: RiskPoint[] }> = ({ series }) => {
+  const W = 600;
+  const H = 120;
+  const PAD_X = 8;
+  const PAD_Y = 14;
+
+  if (series.length < 2) {
+    return (
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_10px_30px_-14px_rgba(15,23,42,0.10)] p-5 sm:p-6">
+        <h2 className="font-display font-bold text-base text-[#0F172A] mb-1">Risk over time</h2>
+        <p className="text-xs text-[#475569] mb-4">Trend appears once you have at least two saved scans.</p>
+        <p className="text-sm text-[#94A3B8] py-6 text-center">Not enough history yet.</p>
+      </div>
+    );
+  }
+
+  const xFor = (i: number) => PAD_X + (i / (series.length - 1)) * (W - PAD_X * 2);
+  const yFor = (risk: number) => PAD_Y + (1 - Math.min(100, Math.max(0, risk)) / 100) * (H - PAD_Y * 2);
+
+  const points = series.map((p, i) => ({ x: xFor(i), y: yFor(p.riskScore), p }));
+  const linePoints = points.map((pt) => `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
+  const areaPoints = `${PAD_X},${H - PAD_Y} ${linePoints} ${W - PAD_X},${H - PAD_Y}`;
+
+  const first = series[0];
+  const last = series[series.length - 1];
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_10px_30px_-14px_rgba(15,23,42,0.10)] p-5 sm:p-6">
+      <div className="flex items-center justify-between gap-3 mb-1">
+        <h2 className="font-display font-bold text-base text-[#0F172A] flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-[#2563EB]" aria-hidden="true" />
+          Risk over time
+        </h2>
+        <span className="text-xs text-[#475569] tabular-nums">
+          Latest: <span className="font-semibold text-[#0F172A]">{last.riskScore}</span>
+        </span>
+      </div>
+      <p className="text-xs text-[#475569] mb-4">
+        Risk score (0–100) for every saved scan, oldest to newest, left to right.
+      </p>
+
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full h-28"
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={`Risk score trend from ${first.riskScore} on the earliest saved scan to ${last.riskScore} on the most recent.`}
+      >
+        {/* Reference lines at 0/50/100 risk */}
+        {[0, 50, 100].map((r) => (
+          <line
+            key={r}
+            x1={PAD_X}
+            x2={W - PAD_X}
+            y1={yFor(r)}
+            y2={yFor(r)}
+            stroke="#E2E8F0"
+            strokeWidth={1}
+            strokeDasharray={r === 0 || r === 100 ? undefined : '3 4'}
+          />
+        ))}
+        <polygon points={areaPoints} fill="#2563EB" fillOpacity={0.08} stroke="none" />
+        <polyline points={linePoints} fill="none" stroke="#2563EB" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        {points.map((pt, i) => (
+          <circle
+            key={series[i].id}
+            cx={pt.x}
+            cy={pt.y}
+            r={i === points.length - 1 ? 4 : 2.5}
+            fill={VERDICT_STYLES[pt.p.verdict]?.solid ?? '#94A3B8'}
+            stroke="#FFFFFF"
+            strokeWidth={1.2}
+          />
+        ))}
+      </svg>
+
+      <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1">
+        <span>{new Date(first.createdAt).toLocaleDateString()}</span>
+        <span>{new Date(last.createdAt).toLocaleDateString()}</span>
+      </div>
+    </div>
+  );
+};
 
 /** Proportional verdict distribution: a single segmented bar plus a counted legend. No chart library. */
 const VerdictDistribution: React.FC<{ counts: Record<Verdict, number>; total: number }> = ({ counts, total }) => (
@@ -391,33 +538,37 @@ const Dashboard: React.FC = () => {
             <StatCard
               icon={ScanLine}
               label="Total scans"
-              value={String(stats.total)}
+              value={stats.total}
               hint="Documents analyzed and saved to history in this browser."
+            />
+            <StatCard
+              icon={Percent}
+              label="Share flagged"
+              value={stats.flaggedShare}
+              suffix="%"
+              hint="Scans verdicted Suspicious or Likely Fake, as a share of all saved scans."
+              accent={stats.flaggedShare >= 50 ? '#EF4444' : stats.flaggedShare >= 20 ? '#F59E0B' : '#10B981'}
             />
             <StatCard
               icon={Gauge}
               label="Average risk score"
-              value={`${stats.averageRisk}`}
+              value={stats.averageRisk}
               hint="Mean risk score (0–100) across all saved scans."
               accent={stats.averageRisk >= 65 ? '#EF4444' : stats.averageRisk >= 35 ? '#F59E0B' : '#10B981'}
             />
             <StatCard
               icon={KeyRound}
               label="Failed ID checksums"
-              value={String(stats.failedChecksumCount)}
+              value={stats.failedChecksumCount}
               hint="Scans with at least one identifier that failed its official checksum/format rule."
               accent="#EF4444"
             />
-            <StatCard
-              icon={Flag}
-              label="Red flags raised"
-              value={String(stats.topRedFlags.reduce((sum, f) => sum + f.count, 0))}
-              hint="Total findings across the most frequent red-flag titles below."
-              accent="#F59E0B"
-            />
           </div>
 
-          <VerdictDistribution counts={stats.verdictCounts} total={stats.total} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <VerdictDistribution counts={stats.verdictCounts} total={stats.total} />
+            <RiskSparkline series={stats.riskSeries} />
+          </div>
 
           <TopRedFlags items={stats.topRedFlags} />
 

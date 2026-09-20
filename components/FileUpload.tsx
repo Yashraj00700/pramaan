@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig, useReducedMotion } from 'framer-motion';
 import {
   FileText,
   Camera,
@@ -45,12 +45,19 @@ const ENGINE_CHECKS = [
 const STAGE_TIMINGS = [1200, 3000, 5200, 7200];
 const REASSURANCE_AFTER_SEC = 25;
 
+// How long the "confirming" pulse holds on-screen after a drop/pick before the
+// scan state takes over — purely a perceptual beat, not a real processing delay.
+const CONFIRM_PULSE_MS = 360;
+
 const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
   const [dragActive, setDragActive] = useState(false);
   const [scanStep, setScanStep] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
+  const [confirming, setConfirming] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   // Advance through the stepper while a scan is running. Presentational only —
   // driven purely by elapsed time, never by an actual "stage complete" signal
@@ -76,6 +83,11 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
     return () => clearInterval(interval);
   }, [isAnalyzing]);
 
+  // Cleanup any pending confirm-pulse timer on unmount.
+  useEffect(() => () => {
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+  }, []);
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -86,19 +98,32 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
     }
   };
 
+  // Accepts a file the same way for drop and for the file/camera inputs: a brief
+  // "confirmed" pulse plays first, then the file is handed up to the parent —
+  // this never changes which file is selected, only when the parent learns of it.
+  const acceptFile = (file: File) => {
+    setConfirming(true);
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    const delay = prefersReducedMotion ? 0 : CONFIRM_PULSE_MS;
+    confirmTimerRef.current = setTimeout(() => {
+      setConfirming(false);
+      onFileSelect(file);
+    }, delay);
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      onFileSelect(e.dataTransfer.files[0]);
+      acceptFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
-      onFileSelect(e.target.files[0]);
+      acceptFile(e.target.files[0]);
     }
     e.target.value = '';
   };
@@ -120,6 +145,7 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
   const clampedStep = Math.min(scanStep, SCAN_STEPS.length - 1);
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="w-full max-w-3xl mx-auto">
       <AnimatePresence mode="wait" initial={false}>
         {isAnalyzing ? (
@@ -168,24 +194,24 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
                 </div>
                 <motion.div
                   aria-hidden="true"
-                  className="absolute left-0 right-0 h-10 motion-reduce:hidden"
+                  className="absolute left-0 right-0 top-0 h-10 motion-reduce:hidden"
                   style={{
                     background:
                       'linear-gradient(180deg, transparent, rgba(37,99,235,0.16) 45%, rgba(37,99,235,0.16) 55%, transparent)',
                   }}
-                  initial={{ top: '-15%' }}
-                  animate={{ top: ['-15%', '100%'] }}
+                  initial={{ y: -26 }}
+                  animate={{ y: [-26, 176] }}
                   transition={{ duration: 2.1, ease: 'easeInOut', repeat: Infinity }}
                 />
                 <motion.div
                   aria-hidden="true"
-                  className="absolute left-0 right-0 h-0.5 motion-reduce:hidden"
+                  className="absolute left-0 right-0 top-0 h-0.5 motion-reduce:hidden"
                   style={{
                     background: 'linear-gradient(90deg, transparent, #2563EB 30%, #3B82F6 50%, #2563EB 70%, transparent)',
                     boxShadow: '0 0 12px 2px rgba(37,99,235,0.6)',
                   }}
-                  initial={{ top: '-2%', opacity: 0 }}
-                  animate={{ top: ['-2%', '98%'], opacity: [0, 1, 1, 0] }}
+                  initial={{ y: -4, opacity: 0 }}
+                  animate={{ y: [-4, 172], opacity: [0, 1, 1, 0] }}
                   transition={{ duration: 2.1, ease: 'easeInOut', repeat: Infinity, times: [0, 0.1, 0.9, 1] }}
                 />
                 <div className="motion-reduce:block hidden absolute inset-x-0 top-1/2 h-0.5 bg-[#2563EB]/50" />
@@ -201,9 +227,10 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
               {/* Progress rail */}
               <div className="w-full h-1.5 rounded-full bg-[#EFF6FF] overflow-hidden mb-8">
                 <motion.div
-                  className="h-full rounded-full"
+                  className="h-full w-full rounded-full origin-left"
                   style={{ background: 'linear-gradient(90deg, #2563EB, #3B82F6)' }}
-                  animate={{ width: `${railPct}%` }}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: railPct / 100 }}
                   transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                 />
               </div>
@@ -211,13 +238,15 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
               <div className="w-full relative pl-1">
                 {/* Rail track connecting the stages */}
                 <div className="absolute left-3 top-3 bottom-3 w-px bg-[#E2E8F0]" aria-hidden="true" />
-                <motion.div
-                  className="absolute left-3 top-3 w-px bg-[#2563EB]"
-                  initial={{ height: '0%' }}
-                  animate={{ height: `${(clampedStep / (SCAN_STEPS.length - 1)) * 100}%` }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  aria-hidden="true"
-                />
+                <div className="absolute left-3 top-3 bottom-3 w-px overflow-hidden" aria-hidden="true">
+                  <motion.div
+                    className="w-px bg-[#2563EB] origin-top"
+                    style={{ height: '100%' }}
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: clampedStep / (SCAN_STEPS.length - 1) }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+                  />
+                </div>
 
                 <div className="space-y-5">
                   {SCAN_STEPS.map((step, i) => {
@@ -227,14 +256,18 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
                       <motion.div
                         key={step.label}
                         initial={false}
-                        animate={{
-                          opacity: scanStep >= i ? 1 : 0.4,
-                          x: scanStep >= i ? 0 : -8,
+                        animate={{ opacity: scanStep >= i ? 1 : 0.4, x: scanStep >= i ? 0 : -8 }}
+                        transition={{
+                          opacity: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                          x: { type: 'spring', stiffness: 420, damping: 32 },
                         }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                         className="relative flex items-center gap-4"
                       >
-                        <div
+                        {/* Each completed stage settles with a small spring — deliberate, mechanical, never bouncy. */}
+                        <motion.div
+                          initial={false}
+                          animate={isDone ? { scale: [1, 1.14, 1] } : { scale: 1 }}
+                          transition={{ type: 'spring', stiffness: 380, damping: 18 }}
                           className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center transition-colors duration-300 ${
                             isDone
                               ? 'bg-[#2563EB] text-white'
@@ -243,8 +276,32 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
                               : 'bg-white text-[#475569] border border-[#E2E8F0]'
                           }`}
                         >
-                          {isDone ? <ShieldCheck className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
-                        </div>
+                          <AnimatePresence mode="wait" initial={false}>
+                            {isDone ? (
+                              <motion.span
+                                key="done"
+                                initial={{ scale: 0.4, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.4, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 500, damping: 24 }}
+                                className="flex"
+                              >
+                                <ShieldCheck className="w-3 h-3" />
+                              </motion.span>
+                            ) : (
+                              <motion.span
+                                key="pending"
+                                initial={{ scale: 0.6, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.6, opacity: 0 }}
+                                transition={{ duration: 0.18 }}
+                                className="flex"
+                              >
+                                <step.icon className="w-3 h-3" />
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
                         <span
                           className={`text-sm ${
                             isActive ? 'text-[#2563EB] font-semibold' : isDone ? 'text-[#0F172A]' : 'text-[#475569]'
@@ -279,10 +336,14 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
             role="button"
             tabIndex={0}
             aria-label="Upload a document to scan"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0, scale: dragActive ? 1.012 : 1 }}
+            initial={{ opacity: 0, y: 8, scale: 1 }}
+            animate={{ opacity: 1, y: 0, scale: dragActive ? 1.018 : 1 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            transition={{
+              opacity: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
+              y: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
+              scale: { type: 'spring', stiffness: 340, damping: 22 },
+            }}
             whileHover={{ y: -2 }}
             onClick={onButtonClick}
             onKeyDown={onCardKeyDown}
@@ -318,6 +379,48 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
               className="pointer-events-none absolute -top-24 -right-16 w-64 h-64 rounded-full blur-3xl opacity-60"
               style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.14), transparent 70%)' }}
             />
+
+            {/* Soft glow bloom that blooms in on drag-over — springy, transform/opacity only */}
+            <AnimatePresence>
+              {dragActive && (
+                <motion.div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 flex items-center justify-center motion-reduce:hidden"
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+                >
+                  <div
+                    className="w-[140%] h-[140%] rounded-full blur-3xl"
+                    style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.22), transparent 65%)' }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Brief confirming pulse right after a file is accepted, before the scan state takes over */}
+            <AnimatePresence>
+              {confirming && (
+                <motion.div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-white/70 motion-reduce:bg-white/90"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <motion.div
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: [0.5, 1.15, 1], opacity: 1 }}
+                    transition={{ duration: prefersReducedMotion ? 0.001 : 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-16 h-16 rounded-full bg-[#2563EB] text-white flex items-center justify-center shadow-[0_20px_40px_-14px_rgba(37,99,235,0.55)]"
+                  >
+                    <ShieldCheck className="w-8 h-8" />
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Animated marching-ants border on drag-over — reduced-motion gets the static CSS dashed border only */}
             <AnimatePresence>
@@ -426,6 +529,7 @@ const FileUpload: React.FC<Props> = ({ onFileSelect, isAnalyzing }) => {
         )}
       </AnimatePresence>
     </div>
+    </MotionConfig>
   );
 };
 
