@@ -899,18 +899,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               variants={fadeUp}
               className="rounded-2xl border border-[#E2E8F0] bg-white p-7 shadow-[0_10px_30px_-16px_rgba(15,23,42,0.10)]"
             >
-              <p className="font-display font-extrabold text-3xl text-[#0F172A] tabular-nums">&#8377;183 Cr</p>
+              <p className="font-display font-extrabold text-3xl text-[#0F172A] tabular-nums">&#8377;202 Cr</p>
               <p className="mt-3 text-sm text-[#475569] leading-relaxed">
-                Fake bank-guarantee scam tied to a Madhya Pradesh Jal Nigam irrigation tender &mdash;
-                CBI arrests, after forged guarantees helped win &#8377;974 crore in contracts.
+                Forged PNB and Bank of Baroda guarantees submitted to <strong>Madhya Pradesh Jal Nigam
+                Maryadit</strong> and Rajasthan Renewable Energy Corp to win public contracts &mdash;
+                an Enforcement Directorate case. Exactly the document a counter cannot verify by eye.
               </p>
               <a
-                href="https://www.angelone.in/news/market-updates/fake-bank-guarantee-scam-cbi-arrests-2-in-183-crore-fraud-case"
+                href="https://the420.in/fake-guarantees-real-loss-rs202-crore-bank-guarantee-scam-ed-attaches-assets/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#2563EB] hover:underline"
               >
-                Source: CBI arrests, via Angel One <ArrowUpRight className="w-3 h-3" />
+                Source: ED case, via The420.in <ArrowUpRight className="w-3 h-3" />
               </a>
             </motion.div>
 
