@@ -22,7 +22,12 @@ AI document-authenticity &amp; fraud detection — deterministic forensics, Clau
 </p>
 
 <p align="center">
-  <b><a href="docs/assets/DocsGuard-Demo.mp4">▶ Watch the full demo (71s)</a></b> &nbsp;·&nbsp;
+  <a href="https://youtu.be/Vro11O8mgrs"><img alt="Watch the demo" src="https://img.shields.io/badge/▶%20Watch%20the%20demo-YouTube-FF0000?logo=youtube&logoColor=white&style=for-the-badge"></a>
+</p>
+
+<p align="center">
+  <b><a href="https://youtu.be/Vro11O8mgrs">▶ Watch the demo on YouTube</a></b> &nbsp;·&nbsp;
+  <a href="docs/assets/DocsGuard-Demo.mp4">Download MP4</a> &nbsp;·&nbsp;
   <a href="docs/DocsGuard-Deck.pdf">Pitch deck (16 slides)</a> &nbsp;·&nbsp;
   <a href="docs/DocsGuard-Explainer.pdf">Detailed explainer</a>
 </p>
