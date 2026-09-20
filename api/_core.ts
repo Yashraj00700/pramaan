@@ -40,7 +40,10 @@ import { runDeterministicChecks } from './verification.js';
 import { screenNames } from './sanctions.js';
 import { runCourt, condense } from './court-fast.js';
 
-const MODEL = 'claude-opus-5';
+// Latency is a product requirement here: a scan that takes minutes is unusable at a
+// counter. Sonnet 5 is markedly faster for this vision + extraction workload; set
+// ANALYSIS_MODEL=claude-opus-5 to trade speed back for depth.
+const MODEL = process.env.ANALYSIS_MODEL || 'claude-sonnet-5';
 
 export interface AnalyzeInput {
   fileBase64: string;
@@ -385,7 +388,7 @@ async function runModuleGroup(opts: {
     ];
 
     const params = (messages: any[]) => ({
-      model: MODEL, max_tokens: 5000, thinking: { type: 'adaptive' }, output_config: { effort } as any,
+      model: MODEL, max_tokens: 4500, thinking: { type: 'disabled' }, output_config: { effort } as any,
       system: buildModuleSystem(ids), tools, tool_choice: { type: 'auto' }, messages,
     }) as any;
 
@@ -600,6 +603,10 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
 
   // userContent is the shared document + ELA-image payload every pass (A, B, C, D) is
   // given. It deliberately carries no trailing task text — each pass appends its own.
+  // Two payloads: the full evidence set (document + ELA heatmap) for the forensic
+  // pass, and a lighter document-only payload for the module/court passes. Sending
+  // every image to all four passes was doubling the upload cost of every scan.
+  const docOnlyContent: any[] = [contentBlock(input.mediaType, sendB64)];
   const userContent: any[] = [contentBlock(input.mediaType, sendB64)];
   for (const img of extraImages) {
     userContent.push({ type: 'text', text: img.caption });
@@ -708,9 +715,9 @@ export async function analyze(input: AnalyzeInput): Promise<any> {
   // thrown rejection from any one of them can never take the others — or the good
   // Pass A already computed above — down with it.
   const [bResult, cResult, dResult] = await Promise.allSettled([
-    runModuleGroup({ client, effort, webMax, userContent, metaText, passA: report, ids: GROUP_B_IDS, groupLabel: 'B' }),
-    runModuleGroup({ client, effort, webMax, userContent, metaText, passA: report, ids: GROUP_C_IDS, groupLabel: 'C' }),
-    runCourt({ client, model: MODEL, userContent, baseReport: report, bindingFacts, effort }),
+    runModuleGroup({ client, effort, webMax, userContent: docOnlyContent, metaText, passA: report, ids: GROUP_B_IDS, groupLabel: 'B' }),
+    runModuleGroup({ client, effort, webMax, userContent: docOnlyContent, metaText, passA: report, ids: GROUP_C_IDS, groupLabel: 'C' }),
+    runCourt({ client, model: MODEL, userContent: docOnlyContent, baseReport: report, bindingFacts, effort }),
   ]);
 
   const bOut = bResult.status === 'fulfilled' ? bResult.value : null;
